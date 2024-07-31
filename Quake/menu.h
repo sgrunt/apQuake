@@ -27,12 +27,7 @@ enum m_state_e
 {
 	m_none,
 	m_main,
-	m_singleplayer,
-	m_load,
-	m_save,
-	m_multiplayer,
-	m_setup,
-	m_net,
+	m_play,
 	m_options,
 	m_game,
 	m_sound,
@@ -41,11 +36,10 @@ enum m_state_e
 	m_keys,
 	m_help,
 	m_quit,
-	m_lanconfig,
-	m_mpgameoptions,
-	m_search,
-	m_slist,
-	m_mods,
+	m_ep1_select,
+	m_ep2_select,
+	m_ep3_select,
+	m_ep4_select,
 };
 
 extern enum m_state_e m_state;

@@ -28,53 +28,38 @@ void (*vid_menukeyfn) (int key);
 
 enum m_state_e m_state;
 
-static void M_Menu_SinglePlayer_f (void);
-static void M_Menu_Load_f (void);
-static void M_Menu_Save_f (void);
-static void M_Menu_MultiPlayer_f (void);
-static void M_Menu_Setup_f (void);
-static void M_Menu_Net_f (void);
-static void M_Menu_LanConfig_f (void);
-static void M_Menu_MPGameOptions_f (void);
-static void M_Menu_Search_f (enum slistScope_e scope);
-static void M_Menu_ServerList_f (void);
+static void M_Menu_Play_f (void);
 static void M_Menu_Keys_f (void);
 static void M_Menu_Help_f (void);
-static void M_Menu_Mods_f (void);
+static void M_Menu_Ep1_Select_f (void);
+static void M_Menu_Ep2_Select_f (void);
+static void M_Menu_Ep3_Select_f (void);
+static void M_Menu_Ep4_Select_f (void);
 
 static void M_Main_Draw (cb_context_t *cbx);
-static void M_SinglePlayer_Draw (cb_context_t *cbx);
-static void M_Load_Draw (cb_context_t *cbx);
-static void M_Save_Draw (cb_context_t *cbx);
-static void M_MultiPlayer_Draw (cb_context_t *cbx);
-static void M_Setup_Draw (cb_context_t *cbx);
-static void M_Net_Draw (cb_context_t *cbx);
-static void M_LanConfig_Draw (cb_context_t *cbx);
-static void M_MPGameOptions_Draw (cb_context_t *cbx);
-static void M_Search_Draw (cb_context_t *cbx);
-static void M_ServerList_Draw (cb_context_t *cbx);
+static void M_Play_Draw (cb_context_t *cbx);
 static void M_Options_Draw (cb_context_t *cbx);
-static void M_Mods_Draw (cb_context_t *cbx);
 static void M_Keys_Draw (cb_context_t *cbx);
 static void M_Help_Draw (cb_context_t *cbx);
 static void M_Quit_Draw (cb_context_t *cbx);
+static void M_Ep1_Select_Draw (cb_context_t *cbx);
+static void M_Ep2_Select_Draw (cb_context_t *cbx);
+static void M_Ep3_Select_Draw (cb_context_t *cbx);
+static void M_Ep4_Select_Draw (cb_context_t *cbx);
 
 static void M_Main_Key (int key);
-static void M_SinglePlayer_Key (int key);
-static void M_Load_Key (int key);
-static void M_Save_Key (int key);
-static void M_MultiPlayer_Key (int key);
-static void M_Setup_Key (int key);
-static void M_Net_Key (int key);
-static void M_LanConfig_Key (int key);
-static void M_MPGameOptions_Key (int key);
-static void M_Search_Key (int key);
-static void M_ServerList_Key (int key);
+static void M_Play_Key (int key);
 static void M_Options_Key (int key);
 static void M_Keys_Key (int key);
 static void M_Help_Key (int key);
-static void M_Mods_Key (int key);
 static void M_Quit_Key (int key);
+static void M_Ep1_Select_Key (int key);
+static void M_Ep2_Select_Key (int key);
+static void M_Ep3_Select_Key (int key);
+static void M_Ep4_Select_Key (int key);
+
+static void M_SelectLevel (const char *level);
+static void M_Kill ();
 
 qboolean m_entersound; // play after drawing a frame, so caching
 					   // won't disrupt the sound
@@ -85,11 +70,6 @@ qboolean m_is_quitting = false; // prevents SDL_StartTextInput during quit
 enum m_state_e m_return_state;
 qboolean	   m_return_onerror;
 char		   m_return_reason[32];
-
-#define StartingGame (m_multiplayer_cursor == 1)
-#define JoiningGame	 (m_multiplayer_cursor == 0)
-#define IPXConfig	 (m_net_cursor == 0)
-#define TCPIPConfig	 (m_net_cursor == 1)
 
 static int		m_main_cursor;
 static qboolean m_mouse_moved;
@@ -246,16 +226,6 @@ M_DrawPic
 void M_DrawPic (cb_context_t *cbx, int x, int y, qpic_t *pic)
 {
 	Draw_Pic (cbx, x, y, pic, 1.0f, false); // johnfitz -- simplified becuase centering is handled elsewhere
-}
-
-/*
-================
-M_DrawTransPicTranslate
-================
-*/
-static void M_DrawTransPicTranslate (cb_context_t *cbx, int x, int y, qpic_t *pic, int top, int bottom) // johnfitz -- more parameters
-{
-	Draw_TransPicTranslate (cbx, x, y, pic, top, bottom); // johnfitz -- simplified becuase centering is handled elsewhere
 }
 
 /*
@@ -629,10 +599,6 @@ void M_Main_Key (int key)
 		key_dest = key_game;
 		m_state = m_none;
 		cls.demonum = m_save_demonum;
-		if (!fitzmode && !cl_startdemos.value) /* QuakeSpasm customization: */
-			break;
-		if (cls.demonum != -1 && !cls.demoplayback && cls.state != ca_connected)
-			CL_NextDemo ();
 		break;
 
 	case K_DOWNARROW:
@@ -654,11 +620,13 @@ void M_Main_Key (int key)
 		switch (m_main_cursor)
 		{
 		case 0:
-			M_Menu_SinglePlayer_f ();
+			if (sv.active)
+				M_Kill ();
+			else
+				M_Menu_Play_f ();
 			break;
 
 		case 1:
-			M_Menu_MultiPlayer_f ();
 			break;
 
 		case 2:
@@ -670,9 +638,7 @@ void M_Main_Key (int key)
 			break;
 
 		case 4:
-			if (menu2)
-				M_Menu_Mods_f ();
-			else
+			if (!menu2)
 				M_Menu_Quit_f ();
 			break;
 		case 5:
@@ -682,37 +648,118 @@ void M_Main_Key (int key)
 	}
 }
 
+static void M_Kill () {
+	if (!sv.active)
+		return;
+
+	IN_Activate ();
+	key_dest = key_game;
+	m_state = m_none;
+	Cbuf_AddText("kill\n");	
+}
+
 //=============================================================================
-/* SINGLE PLAYER MENU */
+/* [AP] PLAY MENU */
 
-int m_singleplayer_cursor;
-#define SINGLEPLAYER_ITEMS 3
-
-static void M_Menu_SinglePlayer_f (void)
+typedef struct
 {
+	const char *name;
+	const char *description;
+} level_t;
+
+static level_t levels[] = {
+	{"start", "Entrance"}, // 0
+
+	{"e1m1", "Slipgate Complex"}, // 1
+	{"e1m2", "Castle of the Damned"},
+	{"e1m3", "The Necropolis"},
+	{"e1m4", "The Grisly Grotto"},
+	{"e1m5", "Gloom Keep"},
+	{"e1m6", "The Door To Chthon"},
+	{"e1m7", "The House of Chthon"},
+	{"e1m8", "Ziggurat Vertigo"},
+
+	{"e2m1", "The Installation"}, // 9
+	{"e2m2", "Ogre Citadel"},
+	{"e2m3", "Crypt of Decay"},
+	{"e2m4", "The Ebon Fortress"},
+	{"e2m5", "The Wizard's Manse"},
+	{"e2m6", "The Dismal Oubliette"},
+	{"e2m7", "Underearth"},
+
+	{"e3m1", "Termination Central"}, // 16
+	{"e3m2", "The Vaults of Zin"},
+	{"e3m3", "The Tomb of Terror"},
+	{"e3m4", "Satan's Dark Delight"},
+	{"e3m5", "Wind Tunnels"},
+	{"e3m6", "Chambers of Torment"},
+	{"e3m7", "The Haunted Halls"},
+
+	{"e4m1", "The Sewage System"}, // 23
+	{"e4m2", "The Tower of Despair"},
+	{"e4m3", "The Elder God Shrine"},
+	{"e4m4", "The Palace of Hate"},
+	{"e4m5", "Hell's Atrium"},
+	{"e4m6", "The Pain Maze"},
+	{"e4m7", "Azure Agony"},
+	{"e4m8", "The Nameless City"},
+
+	{"end", "Shub-Niggurath's Pit"}, // 31
+
+	{"dm1", "Place of Two Deaths"}, // 32
+	{"dm2", "Claustrophobopolis"},
+	{"dm3", "The Abandoned Base"},
+	{"dm4", "The Bad Place"},
+	{"dm5", "The Cistern"},
+	{"dm6", "The Dark Zone"}};
+
+typedef struct
+{
+	const char *description;
+	int			firstLevel;
+	int			levels;
+} episode_t;
+
+static episode_t episodes[] = {{"Welcome to Quake", 0, 1}, {"Doomed Dimension", 1, 8}, {"Realm of Black Magic", 9, 7}, {"Netherworld", 16, 7},
+							   {"The Elder World", 23, 8}, {"Final Level", 31, 1},	   {"Deathmatch Arena", 32, 6}};
+
+int m_play_cursor;
+#define SINGLEPLAYER_ITEMS 5
+
+static void M_Menu_Play_f (void)
+{
+	if (sv.active)
+		return;
 	M_MenuChanged ();
 	IN_Deactivate (true);
 	key_dest = key_menu;
-	m_state = m_singleplayer;
+	m_state = m_play;
 }
 
-static void M_SinglePlayer_Draw (cb_context_t *cbx)
+static void M_Play_Draw (cb_context_t *cbx)
 {
-	int		f;
 	qpic_t *p;
+	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
 	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/sp_menu.lmp"));
+	//M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/sp_menu.lmp"));
 
-	f = (int)(realtime * 10) % 6;
+	for (int i = 0; i < SINGLEPLAYER_ITEMS; i++)
+	{
+		const int y = top + i * CHARACTER_SIZE;
+		if (i == SINGLEPLAYER_ITEMS - 1)
+			M_Print (cbx, MENU_LABEL_X, y, levels[episodes[i + 1].firstLevel].description);
+		else
+			M_Print (cbx, MENU_LABEL_X, y, episodes[i + 1].description);
+	}
 
-	M_Mouse_UpdateListCursor (&m_singleplayer_cursor, 70, 320, 32, 20, SINGLEPLAYER_ITEMS, 0);
-	M_DrawTransPic (cbx, 54, 32 + m_singleplayer_cursor * 20, Draw_CachePic (va ("gfx/menudot%i.lmp", f + 1)));
+	M_Mouse_UpdateListCursor (&m_play_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, SINGLEPLAYER_ITEMS, 0);
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_play_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
-static void M_SinglePlayer_Key (int key)
+static void M_Play_Key (int key)
 {
 	switch (key)
 	{
@@ -724,14 +771,14 @@ static void M_SinglePlayer_Key (int key)
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (++m_singleplayer_cursor >= SINGLEPLAYER_ITEMS)
-			m_singleplayer_cursor = 0;
+		if (++m_play_cursor >= SINGLEPLAYER_ITEMS)
+			m_play_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (--m_singleplayer_cursor < 0)
-			m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
+		if (--m_play_cursor < 0)
+			m_play_cursor = SINGLEPLAYER_ITEMS - 1;
 		break;
 
 	case K_MOUSE1:
@@ -740,281 +787,95 @@ static void M_SinglePlayer_Key (int key)
 	case K_ABUTTON:
 		m_entersound = true;
 
-		switch (m_singleplayer_cursor)
+		switch (m_play_cursor)
 		{
 		case 0:
-			if (sv.active)
-				if (!SCR_ModalMessage ("Are you sure you want to\nstart a new game? (y/n)\n", 0.0f))
-					break;
-			IN_Activate ();
-			key_dest = key_game;
-			if (sv.active)
-				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("maxplayers 1\n");
-			Cbuf_AddText ("deathmatch 0\n"); // johnfitz
-			Cbuf_AddText ("coop 0\n");		 // johnfitz
-			Cbuf_AddText ("map start\n");
+			M_Menu_Ep1_Select_f();
 			break;
 
 		case 1:
-			M_Menu_Load_f ();
+			M_Menu_Ep2_Select_f();
 			break;
 
 		case 2:
-			M_Menu_Save_f ();
+			M_Menu_Ep3_Select_f();
+			break;
+
+		case 3:
+			M_Menu_Ep4_Select_f();
+			break;
+
+		case 4:
+			M_SelectLevel("end");
 			break;
 		}
 	}
 }
 
-//=============================================================================
-/* LOAD/SAVE MENU */
-
-int load_cursor; // 0 < load_cursor < MAX_SAVEGAMES
-
-#define MAX_SAVEGAMES 20 /* johnfitz -- increased from 12 */
-char m_filenames[MAX_SAVEGAMES][SAVEGAME_COMMENT_LENGTH + 1];
-int	 loadable[MAX_SAVEGAMES];
-
-static void M_ScanSaves (void)
+static void M_SelectLevel(const char *level)
 {
-	int	  i, j, k;
-	char  name[MAX_OSPATH];
-	FILE *f;
-	int	  version;
-	char *save_path = multiuser ? SDL_GetPrefPath ("vkQuake", COM_GetGameNames (true)) : NULL;
-
-	for (i = 0; i < MAX_SAVEGAMES; i++)
-	{
-		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
-		loadable[i] = false;
-		for (j = (multiuser ? 0 : 1); j < 2; ++j)
-		{
-			if (j == 0)
-				q_snprintf (name, sizeof (name), "%ss%i.sav", save_path, i);
-			else
-				q_snprintf (name, sizeof (name), "%s/s%i.sav", com_gamedir, i);
-			f = fopen (name, "r");
-			if (!f)
-				continue;
-			if (fscanf (f, "%i\n", &version) != 1)
-				continue;
-			if (fscanf (f, "%79s\n", name) != 1)
-				continue;
-			q_strlcpy (m_filenames[i], name, SAVEGAME_COMMENT_LENGTH + 1);
-
-			// change _ back to space
-			for (k = 0; k < SAVEGAME_COMMENT_LENGTH; k++)
-			{
-				if (m_filenames[i][k] == '_')
-					m_filenames[i][k] = ' ';
-			}
-			loadable[i] = true;
-			fclose (f);
-			break;
-		}
-	}
-
-	SDL_free (save_path);
-}
-
-static void M_Menu_Load_f (void)
-{
-	M_MenuChanged ();
-	m_state = m_load;
-
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	M_ScanSaves ();
-}
-
-static void M_Menu_Save_f (void)
-{
-	if (!sv.active)
-		return;
-	if (cl.intermission)
-		return;
-	if (svs.maxclients != 1)
-		return;
-	M_MenuChanged ();
-	m_state = m_save;
-
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	M_ScanSaves ();
-}
-
-static void M_Load_Draw (cb_context_t *cbx)
-{
-	int		i;
-	qpic_t *p;
-
-	p = Draw_CachePic ("gfx/p_load.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-
-	for (i = 0; i < MAX_SAVEGAMES; i++)
-		M_Print (cbx, 16, 32 + 8 * i, m_filenames[i]);
-
-	// line cursor
-	M_Mouse_UpdateListCursor (&load_cursor, 16, 320, 32, 8, MAX_SAVEGAMES, 0);
-	Draw_Character (cbx, 8, 32 + load_cursor * 8, 12 + ((int)(realtime * 4) & 1));
-}
-
-static void M_Save_Draw (cb_context_t *cbx)
-{
-	int		i;
-	qpic_t *p;
-
-	p = Draw_CachePic ("gfx/p_save.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-
-	for (i = 0; i < MAX_SAVEGAMES; i++)
-		M_Print (cbx, 16, 32 + 8 * i, m_filenames[i]);
-
-	// line cursor
-	M_Mouse_UpdateListCursor (&load_cursor, 16, 320, 32, 8, MAX_SAVEGAMES, 0);
-	Draw_Character (cbx, 8, 32 + load_cursor * 8, 12 + ((int)(realtime * 4) & 1));
-}
-
-static void M_Load_Key (int k)
-{
-	switch (k)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_SinglePlayer_f ();
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		S_LocalSound ("misc/menu2.wav");
-		if (!loadable[load_cursor])
-			return;
-		m_state = m_none;
-		IN_Activate ();
-		key_dest = key_game;
-
-		// Host_Loadgame_f can't bring up the loading plaque because too much
-		// stack space has been used, so do it now
-		SCR_BeginLoadingPlaque ();
-
-		// issue the load command
-		Cbuf_AddText (va ("load s%i\n", load_cursor));
-		return;
-
-	case K_UPARROW:
-	case K_LEFTARROW:
-		S_LocalSound ("misc/menu1.wav");
-		load_cursor--;
-		if (load_cursor < 0)
-			load_cursor = MAX_SAVEGAMES - 1;
-		break;
-
-	case K_DOWNARROW:
-	case K_RIGHTARROW:
-		S_LocalSound ("misc/menu1.wav");
-		load_cursor++;
-		if (load_cursor >= MAX_SAVEGAMES)
-			load_cursor = 0;
-		break;
-	}
-}
-
-static void M_Save_Key (int k)
-{
-	switch (k)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_SinglePlayer_f ();
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		m_state = m_none;
-		IN_Activate ();
-		key_dest = key_game;
-		Cbuf_AddText (va ("save s%i\n", load_cursor));
-		return;
-
-	case K_UPARROW:
-	case K_LEFTARROW:
-		S_LocalSound ("misc/menu1.wav");
-		load_cursor--;
-		if (load_cursor < 0)
-			load_cursor = MAX_SAVEGAMES - 1;
-		break;
-
-	case K_DOWNARROW:
-	case K_RIGHTARROW:
-		S_LocalSound ("misc/menu1.wav");
-		load_cursor++;
-		if (load_cursor >= MAX_SAVEGAMES)
-			load_cursor = 0;
-		break;
-	}
+        IN_Activate ();
+        key_dest = key_game;
+	Cbuf_AddText ("maxplayers 1\n");
+	Cbuf_AddText ("deathmatch 0\n");
+	Cbuf_AddText ("coop 0\n");
+	Cbuf_AddText ( va ( "map %s\n", level ) );
 }
 
 //=============================================================================
-/* MULTIPLAYER MENU */
+/* [AP] LEVEL SELECT MENUS */
 
-int m_multiplayer_cursor;
-#define MULTIPLAYER_ITEMS 3
+static int m_ep1_select_cursor = 0;
 
-static void M_Menu_MultiPlayer_f (void)
+static void M_Menu_Ep1_Select_f (void)
 {
+	if (sv.active)
+		return;
 	IN_Deactivate (true);
 	key_dest = key_menu;
-	m_state = m_multiplayer;
+	m_state = m_ep1_select;
 	m_entersound = true;
 }
 
-static void M_MultiPlayer_Draw (cb_context_t *cbx)
+static void M_Ep1_Select_Draw (cb_context_t *cbx)
 {
-	int		f;
 	qpic_t *p;
+	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/p_multi.lmp");
+	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/mp_menu.lmp"));
 
-	f = (int)(realtime * 10) % 6;
+	for (int i = 0; i < episodes[1].levels; i++)
+	{
+		const int y = top + i * CHARACTER_SIZE;
+		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[1].firstLevel + i].description);
+	}
 
-	M_Mouse_UpdateListCursor (&m_multiplayer_cursor, 70, 320, 32, 20, MULTIPLAYER_ITEMS, 0);
-	M_DrawTransPic (cbx, 54, 32 + m_multiplayer_cursor * 20, Draw_CachePic (va ("gfx/menudot%i.lmp", f + 1)));
-
-	if (ipxAvailable || ipv4Available || ipv6Available)
-		return;
-	M_PrintWhite (cbx, (320 / 2) - ((27 * 8) / 2), 148, "No Communications Available");
+	M_Mouse_UpdateListCursor (&m_ep1_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[1].levels, 0);
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep1_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
-static void M_MultiPlayer_Key (int key)
+static void M_Ep1_Select_Key (int key)
 {
 	switch (key)
 	{
 	case K_MOUSE2:
 	case K_ESCAPE:
 	case K_BBUTTON:
-		M_Menu_Main_f ();
+		M_Menu_Play_f ();
 		break;
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (++m_multiplayer_cursor >= MULTIPLAYER_ITEMS)
-			m_multiplayer_cursor = 0;
+		if (++m_ep1_select_cursor >= episodes[1].levels)
+			m_ep1_select_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (--m_multiplayer_cursor < 0)
-			m_multiplayer_cursor = MULTIPLAYER_ITEMS - 1;
+		if (--m_ep1_select_cursor < 0)
+			m_ep1_select_cursor = episodes[1].levels - 1;
 		break;
 
 	case K_MOUSE1:
@@ -1022,300 +883,125 @@ static void M_MultiPlayer_Key (int key)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		switch (m_multiplayer_cursor)
-		{
-		case 0:
-			if (ipxAvailable || ipv4Available || ipv6Available)
-				M_Menu_Net_f ();
-			break;
-
-		case 1:
-			if (ipxAvailable || ipv4Available || ipv6Available)
-				M_Menu_Net_f ();
-			break;
-
-		case 2:
-			M_Menu_Setup_f ();
-			break;
-		}
+		M_SelectLevel(levels[episodes[1].firstLevel + m_ep1_select_cursor].name);
+		break;
 	}
 }
 
-//=============================================================================
-/* SETUP MENU */
+static int m_ep2_select_cursor = 0;
 
-int setup_cursor = 4;
-int setup_cursor_table[] = {40, 56, 80, 104, 140};
-
-char setup_hostname[16];
-char setup_myname[16];
-int	 setup_oldtop;
-int	 setup_oldbottom;
-int	 setup_top;
-int	 setup_bottom;
-
-#define NUM_SETUP_CMDS 5
-
-static void M_Menu_Setup_f (void)
+static void M_Menu_Ep2_Select_f (void)
 {
+	if (sv.active)
+		return;
 	IN_Deactivate (true);
 	key_dest = key_menu;
-	m_state = m_setup;
+	m_state = m_ep2_select;
 	m_entersound = true;
-	strcpy (setup_myname, cl_name.string);
-	strcpy (setup_hostname, hostname.string);
-	setup_top = setup_oldtop = ((int)cl_color.value) >> 4;
-	setup_bottom = setup_oldbottom = ((int)cl_color.value) & 15;
 }
 
-static void M_Setup_Draw (cb_context_t *cbx)
+static void M_Ep2_Select_Draw (cb_context_t *cbx)
 {
 	qpic_t *p;
+	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/p_multi.lmp");
+	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
 
-	M_Print (cbx, 64, 40, "Hostname");
-	M_DrawTextBox (cbx, 160, 32, 16, 1);
-	M_Print (cbx, 168, 40, setup_hostname);
+	for (int i = 0; i < episodes[2].levels; i++)
+	{
+		const int y = top + i * CHARACTER_SIZE;
+		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[2].firstLevel + i].description);
+	}
 
-	M_Print (cbx, 64, 56, "Your name");
-	M_DrawTextBox (cbx, 160, 48, 16, 1);
-	M_Print (cbx, 168, 56, setup_myname);
-
-	M_Print (cbx, 64, 80, "Shirt color");
-	M_Print (cbx, 64, 104, "Pants color");
-
-	M_DrawTextBox (cbx, 64, 140 - 8, 14, 1);
-	M_Print (cbx, 72, 140, "Accept Changes");
-
-	p = Draw_CachePic ("gfx/bigbox.lmp");
-	M_DrawTransPic (cbx, 160, 64, p);
-	p = Draw_CachePic ("gfx/menuplyr.lmp");
-	M_DrawTransPicTranslate (cbx, 172, 72, p, setup_top, setup_bottom);
-
-	for (int i = 0; i < 5; ++i)
-		M_Mouse_UpdateCursor (&setup_cursor, 0, 400, setup_cursor_table[i], 8, i);
-	Draw_Character (cbx, 56, setup_cursor_table[setup_cursor], 12 + ((int)(realtime * 4) & 1));
-
-	if (setup_cursor == 0)
-		Draw_Character (cbx, 168 + 8 * strlen (setup_hostname), setup_cursor_table[setup_cursor], 10 + ((int)(realtime * 4) & 1));
-
-	if (setup_cursor == 1)
-		Draw_Character (cbx, 168 + 8 * strlen (setup_myname), setup_cursor_table[setup_cursor], 10 + ((int)(realtime * 4) & 1));
+	M_Mouse_UpdateListCursor (&m_ep2_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[2].levels, 0);
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep2_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
-static void M_Setup_Key (int k)
+static void M_Ep2_Select_Key (int key)
 {
-	switch (k)
+	switch (key)
 	{
 	case K_MOUSE2:
 	case K_ESCAPE:
 	case K_BBUTTON:
-		M_Menu_MultiPlayer_f ();
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		setup_cursor--;
-		if (setup_cursor < 0)
-			setup_cursor = NUM_SETUP_CMDS - 1;
+		M_Menu_Play_f ();
 		break;
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		setup_cursor++;
-		if (setup_cursor >= NUM_SETUP_CMDS)
-			setup_cursor = 0;
+		if (++m_ep2_select_cursor >= episodes[2].levels)
+			m_ep2_select_cursor = 0;
 		break;
 
-	case K_LEFTARROW:
-		if (setup_cursor < 2)
-			return;
-		S_LocalSound ("misc/menu3.wav");
-		if (setup_cursor == 2)
-			setup_top = setup_top - 1;
-		if (setup_cursor == 3)
-			setup_bottom = setup_bottom - 1;
-		break;
-	case K_RIGHTARROW:
-		if (setup_cursor < 2)
-			return;
-	forward:
-		S_LocalSound ("misc/menu3.wav");
-		if (setup_cursor == 2)
-			setup_top = setup_top + 1;
-		if (setup_cursor == 3)
-			setup_bottom = setup_bottom + 1;
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (--m_ep2_select_cursor < 0)
+			m_ep2_select_cursor = episodes[2].levels - 1;
 		break;
 
 	case K_MOUSE1:
 	case K_ENTER:
 	case K_KP_ENTER:
 	case K_ABUTTON:
-		if (setup_cursor == 0 || setup_cursor == 1)
-			return;
-
-		if (setup_cursor == 2 || setup_cursor == 3)
-			goto forward;
-
-		// setup_cursor == 4 (OK)
-		if (strcmp (cl_name.string, setup_myname) != 0)
-			Cbuf_AddText (va ("name \"%s\"\n", setup_myname));
-		if (strcmp (hostname.string, setup_hostname) != 0)
-			Cvar_Set ("hostname", setup_hostname);
-		if (setup_top != setup_oldtop || setup_bottom != setup_oldbottom)
-			Cbuf_AddText (va ("color %i %i\n", setup_top, setup_bottom));
 		m_entersound = true;
-		M_Menu_MultiPlayer_f ();
-		break;
-
-	case K_BACKSPACE:
-		if (setup_cursor == 0)
-		{
-			if (strlen (setup_hostname))
-				setup_hostname[strlen (setup_hostname) - 1] = 0;
-		}
-
-		if (setup_cursor == 1)
-		{
-			if (strlen (setup_myname))
-				setup_myname[strlen (setup_myname) - 1] = 0;
-		}
-		break;
-	}
-
-	if (setup_top > 13)
-		setup_top = 0;
-	if (setup_top < 0)
-		setup_top = 13;
-	if (setup_bottom > 13)
-		setup_bottom = 0;
-	if (setup_bottom < 0)
-		setup_bottom = 13;
-}
-
-static void M_Setup_Char (int k)
-{
-	int l;
-
-	switch (setup_cursor)
-	{
-	case 0:
-		l = strlen (setup_hostname);
-		if (l < 15)
-		{
-			setup_hostname[l + 1] = 0;
-			setup_hostname[l] = k;
-		}
-		break;
-	case 1:
-		l = strlen (setup_myname);
-		if (l < 15)
-		{
-			setup_myname[l + 1] = 0;
-			setup_myname[l] = k;
-		}
+		M_SelectLevel(levels[episodes[2].firstLevel + m_ep2_select_cursor].name);
 		break;
 	}
 }
 
-qboolean M_Setup_TextEntry (void)
+static int m_ep3_select_cursor = 0;
+
+static void M_Menu_Ep3_Select_f (void)
 {
-	return (setup_cursor == 0 || setup_cursor == 1);
-}
-
-//=============================================================================
-/* NET MENU */
-
-int m_net_cursor;
-int m_first_net_item;
-int m_net_items;
-
-static const char *net_helpMessage[] = {
-	/* .........1.........2.... */
-	" Novell network LANs    ", " or Windows 95 DOS-box. ", "                        ", "(LAN=Local Area Network)",
-
-	" Commonly used to play  ", " over the Internet, but ", " also used on a Local   ", " Area Network.          "};
-
-static void M_Menu_Net_f (void)
-{
-	M_MenuChanged ();
+	if (sv.active)
+		return;
 	IN_Deactivate (true);
 	key_dest = key_menu;
-	m_state = m_net;
-
-	m_net_items = 2;
-	m_first_net_item = 0;
-	if (!ipxAvailable)
-	{
-		m_net_items -= 1;
-		m_first_net_item += 1;
-	}
-	if (!ipv4Available && !ipv6Available)
-		m_net_items -= 1;
-
-	m_net_cursor = CLAMP (m_first_net_item, m_net_cursor, m_first_net_item + m_net_items);
+	m_state = m_ep3_select;
+	m_entersound = true;
 }
 
-static void M_Net_Draw (cb_context_t *cbx)
+static void M_Ep3_Select_Draw (cb_context_t *cbx)
 {
-	int		f;
 	qpic_t *p;
+	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/p_multi.lmp");
+	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
 
-	f = 32;
+	for (int i = 0; i < episodes[3].levels; i++)
+	{
+		const int y = top + i * CHARACTER_SIZE;
+		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[3].firstLevel + i].description);
+	}
 
-	if (ipxAvailable)
-		p = Draw_CachePic ("gfx/netmen3.lmp");
-	else
-		p = Draw_CachePic ("gfx/dim_ipx.lmp");
-	M_DrawTransPic (cbx, 72, f, p);
-
-	f += 19;
-	if (ipv4Available || ipv6Available)
-		p = Draw_CachePic ("gfx/netmen4.lmp");
-	else
-		p = Draw_CachePic ("gfx/dim_tcp.lmp");
-	M_DrawTransPic (cbx, 72, f, p);
-
-	f = (320 - 26 * 8) / 2;
-	M_DrawTextBox (cbx, f, 96, 24, 4);
-	f += 8;
-	M_Print (cbx, f, 104, net_helpMessage[m_net_cursor * 4 + 0]);
-	M_Print (cbx, f, 112, net_helpMessage[m_net_cursor * 4 + 1]);
-	M_Print (cbx, f, 120, net_helpMessage[m_net_cursor * 4 + 2]);
-	M_Print (cbx, f, 128, net_helpMessage[m_net_cursor * 4 + 3]);
-
-	f = (int)(realtime * 10) % 6;
-	M_Mouse_UpdateListCursor (&m_net_cursor, 70, 320, 32, 20, m_net_items, m_first_net_item);
-	M_DrawTransPic (cbx, 54, 32 + m_net_cursor * 20, Draw_CachePic (va ("gfx/menudot%i.lmp", f + 1)));
+	M_Mouse_UpdateListCursor (&m_ep3_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[3].levels, 0);
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep3_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
-static void M_Net_Key (int k)
+static void M_Ep3_Select_Key (int key)
 {
-	switch (k)
+	switch (key)
 	{
 	case K_MOUSE2:
 	case K_ESCAPE:
 	case K_BBUTTON:
-		M_Menu_MultiPlayer_f ();
+		M_Menu_Play_f ();
 		break;
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (++m_net_cursor >= m_net_items)
-			m_net_cursor = 0;
+		if (++m_ep3_select_cursor >= episodes[3].levels)
+			m_ep3_select_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (--m_net_cursor < m_first_net_item)
-			m_net_cursor = m_net_items - 1;
+		if (--m_ep3_select_cursor < 0)
+			m_ep3_select_cursor = episodes[3].levels - 1;
 		break;
 
 	case K_MOUSE1:
@@ -1323,7 +1009,70 @@ static void M_Net_Key (int k)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		M_Menu_LanConfig_f ();
+		M_SelectLevel(levels[episodes[3].firstLevel + m_ep3_select_cursor].name);
+		break;
+	}
+}
+
+static int m_ep4_select_cursor = 0;
+
+static void M_Menu_Ep4_Select_f (void)
+{
+	if (sv.active)
+		return;
+	IN_Deactivate (true);
+	key_dest = key_menu;
+	m_state = m_ep4_select;
+	m_entersound = true;
+}
+
+static void M_Ep4_Select_Draw (cb_context_t *cbx)
+{
+	qpic_t *p;
+	const int top = MENU_TOP;
+
+	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
+	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
+	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
+
+	for (int i = 0; i < episodes[4].levels; i++)
+	{
+		const int y = top + i * CHARACTER_SIZE;
+		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[4].firstLevel + i].description);
+	}
+
+	M_Mouse_UpdateListCursor (&m_ep4_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[4].levels, 0);
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep4_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+}
+
+static void M_Ep4_Select_Key (int key)
+{
+	switch (key)
+	{
+	case K_MOUSE2:
+	case K_ESCAPE:
+	case K_BBUTTON:
+		M_Menu_Play_f ();
+		break;
+
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (++m_ep4_select_cursor >= episodes[4].levels)
+			m_ep4_select_cursor = 0;
+		break;
+
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (--m_ep4_select_cursor < 0)
+			m_ep4_select_cursor = episodes[4].levels - 1;
+		break;
+
+	case K_MOUSE1:
+	case K_ENTER:
+	case K_KP_ENTER:
+	case K_ABUTTON:
+		m_entersound = true;
+		M_SelectLevel(levels[episodes[4].firstLevel + m_ep4_select_cursor].name);
 		break;
 	}
 }
@@ -2415,85 +2164,6 @@ static void M_Help_Key (int key)
 }
 
 //=============================================================================
-/* MODS MENU */
-
-#define MAX_MODS_ON_SCREEN MAX_MENU_LINES
-
-static int num_mods = 0;
-static int first_mod = 0;
-static int mods_cursor = 0;
-static int mod_loaded_from_menu = 0;
-
-static void M_Menu_Mods_f (void)
-{
-	M_MenuChanged ();
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	m_state = m_mods;
-	m_entersound = true;
-	num_mods = 0;
-	for (filelist_item_t *item = modlist; item; item = item->next)
-		++num_mods;
-	first_mod = 0;
-	mods_cursor = 0;
-}
-
-static void M_Mods_Draw (cb_context_t *cbx)
-{
-	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	qpic_t *p = Draw_CachePic ("gfx/p_mods.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	int mod_index = -first_mod;
-	int mods_height = q_min (MAX_MODS_ON_SCREEN, num_mods - first_mod);
-
-	for (filelist_item_t *item = modlist; item; item = item->next)
-	{
-		if (mod_index >= MAX_MODS_ON_SCREEN)
-			break;
-		if (mod_index >= 0)
-			M_PrintElided (cbx, MENU_LABEL_X, 32 + mod_index * CHARACTER_SIZE, item->name, 20);
-		++mod_index;
-	}
-
-	M_Mouse_UpdateListCursor (&mods_cursor, 12, 400, 32, CHARACTER_SIZE, mods_height, first_mod);
-	Draw_Character (cbx, MENU_CURSOR_X, 32 + (mods_cursor - first_mod) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
-	if (num_mods > MAX_MODS_ON_SCREEN)
-		M_DrawScrollbar (cbx, 260, 32 + 8, (float)(first_mod) / (float)(num_mods - MAX_MODS_ON_SCREEN), MAX_MODS_ON_SCREEN - 2);
-}
-
-static void M_Mods_Key (int key)
-{
-	int mod_index = 0;
-
-	if (M_HandleScrollBarKeys (key, &mods_cursor, &first_mod, num_mods, MAX_MODS_ON_SCREEN))
-		return;
-
-	switch (key)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_Main_f ();
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		for (filelist_item_t *item = modlist; item; item = item->next)
-			if (mod_index++ == mods_cursor)
-			{
-				Cbuf_AddText ("game \"");
-				Cbuf_AddText (item->name);
-				Cbuf_AddText ("\"\n");
-				mod_loaded_from_menu = 1;
-				m_state = m_main;
-			}
-		break;
-	}
-}
-
-//=============================================================================
 /* QUIT MENU */
 
 static int			  msg_number;
@@ -2504,21 +2174,13 @@ void M_Menu_Quit_f (void)
 {
 	if (m_state == m_quit)
 		return;
-	if (!mod_loaded_from_menu)
-	{
-		was_in_menus = (key_dest == key_menu);
-		IN_Deactivate (true);
-		key_dest = key_menu;
-		m_quit_prevstate = m_state;
-		m_state = m_quit;
-		m_entersound = true;
-		msg_number = rand () & 7;
-	}
-	else
-	{
-		mod_loaded_from_menu = 0;
-		Cbuf_AddText ("game " GAMENAME "\n");
-	}
+	was_in_menus = (key_dest == key_menu);
+	IN_Deactivate (true);
+	key_dest = key_menu;
+	m_quit_prevstate = m_state;
+	m_state = m_quit;
+	m_entersound = true;
+	msg_number = rand () & 7;
 }
 
 static void M_Quit_Key (int key)
@@ -2608,816 +2270,6 @@ static void M_Quit_Draw (cb_context_t *cbx) // johnfitz -- modified for new quit
 }
 
 //=============================================================================
-/* LAN CONFIG MENU */
-
-static int lan_config_cursor = -1;
-#define NUM_LANCONFIG_CMDS 4
-
-static int	lan_config_port;
-static char lan_config_portname[6];
-static char lan_config_joinname[22];
-
-static void M_Menu_LanConfig_f (void)
-{
-	M_MenuChanged ();
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	m_state = m_lanconfig;
-	if (lan_config_cursor == -1)
-	{
-		if (JoiningGame && TCPIPConfig)
-			lan_config_cursor = 2;
-		else
-			lan_config_cursor = 1;
-	}
-	if (StartingGame && lan_config_cursor >= 2)
-		lan_config_cursor = 1;
-	lan_config_port = DEFAULTnet_hostport;
-	q_snprintf (lan_config_portname, sizeof (lan_config_portname), "%u", lan_config_port);
-
-	m_return_onerror = false;
-	m_return_reason[0] = 0;
-}
-
-static void M_LanConfig_Draw (cb_context_t *cbx)
-{
-	qpic_t	   *p;
-	int			basex;
-	int			y;
-	int			numaddresses, i;
-	qhostaddr_t addresses[16];
-	const char *startJoin;
-	const char *protocol;
-
-	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	basex = (320 - p->width) / 2;
-	M_DrawPic (cbx, basex, 4, p);
-
-	basex = 72;
-
-	if (StartingGame)
-		startJoin = "New Game";
-	else
-		startJoin = "Join Game";
-	if (IPXConfig)
-		protocol = "IPX";
-	else
-		protocol = "TCP/IP";
-	M_Print (cbx, basex, 32, va ("%s - %s", startJoin, protocol));
-	basex += 8;
-
-	y = 52;
-	M_Print (cbx, basex, y, "Address:");
-	numaddresses = NET_ListAddresses (addresses, countof (addresses));
-	if (!numaddresses)
-	{
-		M_Print (cbx, basex + 9 * 8, y, "NONE KNOWN");
-		y += 8;
-	}
-	else
-		for (i = 0; i < numaddresses; i++)
-		{
-			M_Print (cbx, basex + 9 * 8, y, addresses[i]);
-			y += 8;
-		}
-
-	y += 8; // for the port's box
-	M_Print (cbx, basex, y, "Port");
-	M_DrawTextBox (cbx, basex + 8 * 8, y - 8, 6, 1);
-	M_Print (cbx, basex + 9 * 8, y, lan_config_portname);
-	M_Mouse_UpdateCursor (&lan_config_cursor, basex, 320, y, 8, 0);
-	if (lan_config_cursor == 0)
-	{
-		Draw_Character (cbx, basex + 9 * 8 + 8 * strlen (lan_config_portname), y, 10 + ((int)(realtime * 4) & 1));
-		Draw_Character (cbx, basex - 8, y, 12 + ((int)(realtime * 4) & 1));
-	}
-	y += 20;
-
-	if (JoiningGame)
-	{
-		M_Print (cbx, basex, y, "Search for local games...");
-		M_Mouse_UpdateCursor (&lan_config_cursor, basex, 320, y, 8, 1);
-		if (lan_config_cursor == 1)
-			Draw_Character (cbx, basex - 8, y, 12 + ((int)(realtime * 4) & 1));
-		y += 8;
-
-		M_Print (cbx, basex, y, "Search for public games...");
-		M_Mouse_UpdateCursor (&lan_config_cursor, basex, 320, y, 8, 2);
-		if (lan_config_cursor == 2)
-			Draw_Character (cbx, basex - 8, y, 12 + ((int)(realtime * 4) & 1));
-		y += 8;
-
-		M_Print (cbx, basex, y, "Join game at:");
-		y += 24;
-		M_DrawTextBox (cbx, basex + 8, y - 8, 22, 1);
-		M_Print (cbx, basex + 16, y, lan_config_joinname);
-		M_Mouse_UpdateCursor (&lan_config_cursor, basex, 320, y, 8, 3);
-		if (lan_config_cursor == 3)
-		{
-			Draw_Character (cbx, basex + 16 + 8 * strlen (lan_config_joinname), y, 10 + ((int)(realtime * 4) & 1));
-			Draw_Character (cbx, basex - 8, y, 12 + ((int)(realtime * 4) & 1));
-		}
-		y += 16;
-	}
-	else
-	{
-		M_DrawTextBox (cbx, basex, y - 8, 2, 1);
-		M_Print (cbx, basex + 8, y, "OK");
-		M_Mouse_UpdateCursor (&lan_config_cursor, basex, 320, y, 8, 1);
-		if (lan_config_cursor == 1)
-			Draw_Character (cbx, basex - 8, y, 12 + ((int)(realtime * 4) & 1));
-		y += 16;
-	}
-
-	if (*m_return_reason)
-		M_PrintWhite (cbx, basex, 148, m_return_reason);
-}
-
-static void M_LanConfig_Key (int key)
-{
-	int l;
-
-	switch (key)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_Net_f ();
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		lan_config_cursor--;
-		if (lan_config_cursor < 0)
-			lan_config_cursor = NUM_LANCONFIG_CMDS - 1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		lan_config_cursor++;
-		if (lan_config_cursor >= NUM_LANCONFIG_CMDS)
-			lan_config_cursor = 0;
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		if (lan_config_cursor == 0)
-			break;
-
-		m_entersound = true;
-
-		M_ConfigureNetSubsystem ();
-
-		if (StartingGame)
-		{
-			if (lan_config_cursor == 1)
-				M_Menu_MPGameOptions_f ();
-		}
-		else
-		{
-			if (lan_config_cursor == 1)
-				M_Menu_Search_f (SLIST_LAN);
-			else if (lan_config_cursor == 2)
-				M_Menu_Search_f (SLIST_INTERNET);
-			else if (lan_config_cursor == 3)
-			{
-				m_return_state = m_state;
-				m_return_onerror = true;
-				IN_Activate ();
-				key_dest = key_game;
-				m_state = m_none;
-				Cbuf_AddText (va ("connect \"%s\"\n", lan_config_joinname));
-			}
-		}
-
-		break;
-
-	case K_BACKSPACE:
-		if (lan_config_cursor == 0)
-		{
-			if (strlen (lan_config_portname))
-				lan_config_portname[strlen (lan_config_portname) - 1] = 0;
-		}
-
-		if (lan_config_cursor == 3)
-		{
-			if (strlen (lan_config_joinname))
-				lan_config_joinname[strlen (lan_config_joinname) - 1] = 0;
-		}
-		break;
-	}
-
-	if (StartingGame && lan_config_cursor >= 2)
-	{
-		if (key == K_UPARROW)
-			lan_config_cursor = 1;
-		else
-			lan_config_cursor = 0;
-	}
-
-	l = atoi (lan_config_portname);
-	if (l > 65535)
-		l = lan_config_port;
-	else
-		lan_config_port = l;
-	q_snprintf (lan_config_portname, sizeof (lan_config_portname), "%u", lan_config_port);
-}
-
-static void M_LanConfig_Char (int key)
-{
-	int l;
-
-	switch (lan_config_cursor)
-	{
-	case 0:
-		if (key < '0' || key > '9')
-			return;
-		l = strlen (lan_config_portname);
-		if (l < 5)
-		{
-			lan_config_portname[l + 1] = 0;
-			lan_config_portname[l] = key;
-		}
-		break;
-	case 3:
-		l = strlen (lan_config_joinname);
-		if (l < 21)
-		{
-			lan_config_joinname[l + 1] = 0;
-			lan_config_joinname[l] = key;
-		}
-		break;
-	}
-}
-
-static qboolean M_LanConfig_TextEntry (void)
-{
-	return (lan_config_cursor == 0 || lan_config_cursor == 3);
-}
-
-//=============================================================================
-/* GAME OPTIONS MENU */
-
-typedef struct
-{
-	const char *name;
-	const char *description;
-} level_t;
-
-static level_t levels[] = {
-	{"start", "Entrance"}, // 0
-
-	{"e1m1", "Slipgate Complex"}, // 1
-	{"e1m2", "Castle of the Damned"},
-	{"e1m3", "The Necropolis"},
-	{"e1m4", "The Grisly Grotto"},
-	{"e1m5", "Gloom Keep"},
-	{"e1m6", "The Door To Chthon"},
-	{"e1m7", "The House of Chthon"},
-	{"e1m8", "Ziggurat Vertigo"},
-
-	{"e2m1", "The Installation"}, // 9
-	{"e2m2", "Ogre Citadel"},
-	{"e2m3", "Crypt of Decay"},
-	{"e2m4", "The Ebon Fortress"},
-	{"e2m5", "The Wizard's Manse"},
-	{"e2m6", "The Dismal Oubliette"},
-	{"e2m7", "Underearth"},
-
-	{"e3m1", "Termination Central"}, // 16
-	{"e3m2", "The Vaults of Zin"},
-	{"e3m3", "The Tomb of Terror"},
-	{"e3m4", "Satan's Dark Delight"},
-	{"e3m5", "Wind Tunnels"},
-	{"e3m6", "Chambers of Torment"},
-	{"e3m7", "The Haunted Halls"},
-
-	{"e4m1", "The Sewage System"}, // 23
-	{"e4m2", "The Tower of Despair"},
-	{"e4m3", "The Elder God Shrine"},
-	{"e4m4", "The Palace of Hate"},
-	{"e4m5", "Hell's Atrium"},
-	{"e4m6", "The Pain Maze"},
-	{"e4m7", "Azure Agony"},
-	{"e4m8", "The Nameless City"},
-
-	{"end", "Shub-Niggurath's Pit"}, // 31
-
-	{"dm1", "Place of Two Deaths"}, // 32
-	{"dm2", "Claustrophobopolis"},
-	{"dm3", "The Abandoned Base"},
-	{"dm4", "The Bad Place"},
-	{"dm5", "The Cistern"},
-	{"dm6", "The Dark Zone"}};
-
-// MED 01/06/97 added hipnotic levels
-static level_t hipnoticlevels[] = {
-	{"start", "Command HQ"}, // 0
-
-	{"hip1m1", "The Pumping Station"}, // 1
-	{"hip1m2", "Storage Facility"},
-	{"hip1m3", "The Lost Mine"},
-	{"hip1m4", "Research Facility"},
-	{"hip1m5", "Military Complex"},
-
-	{"hip2m1", "Ancient Realms"}, // 6
-	{"hip2m2", "The Black Cathedral"},
-	{"hip2m3", "The Catacombs"},
-	{"hip2m4", "The Crypt"},
-	{"hip2m5", "Mortum's Keep"},
-	{"hip2m6", "The Gremlin's Domain"},
-
-	{"hip3m1", "Tur Torment"}, // 12
-	{"hip3m2", "Pandemonium"},
-	{"hip3m3", "Limbo"},
-	{"hip3m4", "The Gauntlet"},
-
-	{"hipend", "Armagon's Lair"}, // 16
-
-	{"hipdm1", "The Edge of Oblivion"} // 17
-};
-
-// PGM 01/07/97 added rogue levels
-// PGM 03/02/97 added dmatch level
-static level_t roguelevels[] = {{"start", "Split Decision"},   {"r1m1", "Deviant's Domain"}, {"r1m2", "Dread Portal"},		{"r1m3", "Judgement Call"},
-								{"r1m4", "Cave of Death"},	   {"r1m5", "Towers of Wrath"},	 {"r1m6", "Temple of Pain"},	{"r1m7", "Tomb of the Overlord"},
-								{"r2m1", "Tempus Fugit"},	   {"r2m2", "Elemental Fury I"}, {"r2m3", "Elemental Fury II"}, {"r2m4", "Curse of Osiris"},
-								{"r2m5", "Wizard's Keep"},	   {"r2m6", "Blood Sacrifice"},	 {"r2m7", "Last Bastion"},		{"r2m8", "Source of Evil"},
-								{"ctf1", "Division of Change"}};
-
-typedef struct
-{
-	const char *description;
-	int			firstLevel;
-	int			levels;
-} episode_t;
-
-static episode_t episodes[] = {{"Welcome to Quake", 0, 1}, {"Doomed Dimension", 1, 8}, {"Realm of Black Magic", 9, 7}, {"Netherworld", 16, 7},
-							   {"The Elder World", 23, 8}, {"Final Level", 31, 1},	   {"Deathmatch Arena", 32, 6}};
-
-// MED 01/06/97  added hipnotic episodes
-static episode_t hipnoticepisodes[] = {{"Scourge of Armagon", 0, 1}, {"Fortress of the Dead", 1, 5}, {"Dominion of Darkness", 6, 6},
-									   {"The Rift", 12, 4},			 {"Final Level", 16, 1},		 {"Deathmatch Arena", 17, 1}};
-
-// PGM 01/07/97 added rogue episodes
-// PGM 03/02/97 added dmatch episode
-static episode_t rogueepisodes[] = {{"Introduction", 0, 1}, {"Hell's Fortress", 1, 7}, {"Corridors of Time", 8, 8}, {"Deathmatch Arena", 16, 1}};
-
-static int startepisode;
-static int startlevel;
-static int maxplayers;
-
-static int mpgameoptions_cursor_table[] = {40, 56, 64, 72, 80, 88, 96, 112, 120};
-#define NUM_MPGAMEOPTIONS 9
-static int mpgameoptions_cursor;
-
-static void M_Menu_MPGameOptions_f (void)
-{
-	M_MenuChanged ();
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	m_state = m_mpgameoptions;
-	if (maxplayers == 0)
-		maxplayers = svs.maxclients;
-	if (maxplayers < 2)
-		maxplayers = 4;
-}
-
-static void M_MPGameOptions_Draw (cb_context_t *cbx)
-{
-	qpic_t *p;
-
-	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-
-	M_DrawTextBox (cbx, 152, 32, 10, 1);
-	M_Print (cbx, 160, 40, "begin game");
-
-	M_Print (cbx, 0, 56, "      Max players");
-	M_Print (cbx, 160, 56, va ("%i", maxplayers));
-
-	M_Print (cbx, 0, 64, "        Game Type");
-	if (coop.value)
-		M_Print (cbx, 160, 64, "Cooperative");
-	else
-		M_Print (cbx, 160, 64, "Deathmatch");
-
-	M_Print (cbx, 0, 72, "        Teamplay");
-	if (rogue)
-	{
-		const char *msg;
-
-		switch ((int)teamplay.value)
-		{
-		case 1:
-			msg = "No Friendly Fire";
-			break;
-		case 2:
-			msg = "Friendly Fire";
-			break;
-		case 3:
-			msg = "Tag";
-			break;
-		case 4:
-			msg = "Capture the Flag";
-			break;
-		case 5:
-			msg = "One Flag CTF";
-			break;
-		case 6:
-			msg = "Three Team CTF";
-			break;
-		default:
-			msg = "Off";
-			break;
-		}
-		M_Print (cbx, 160, 72, msg);
-	}
-	else
-	{
-		const char *msg;
-
-		switch ((int)teamplay.value)
-		{
-		case 1:
-			msg = "No Friendly Fire";
-			break;
-		case 2:
-			msg = "Friendly Fire";
-			break;
-		default:
-			msg = "Off";
-			break;
-		}
-		M_Print (cbx, 160, 72, msg);
-	}
-
-	M_Print (cbx, 0, 80, "            Skill");
-	if (skill.value == 0)
-		M_Print (cbx, 160, 80, "Easy difficulty");
-	else if (skill.value == 1)
-		M_Print (cbx, 160, 80, "Normal difficulty");
-	else if (skill.value == 2)
-		M_Print (cbx, 160, 80, "Hard difficulty");
-	else
-		M_Print (cbx, 160, 80, "Nightmare difficulty");
-
-	M_Print (cbx, 0, 88, "     Frag Limit");
-	if (fraglimit.value == 0)
-		M_Print (cbx, 160, 88, "none");
-	else
-		M_Print (cbx, 160, 88, va ("%i frags", (int)fraglimit.value));
-
-	M_Print (cbx, 0, 96, "     Time Limit");
-	if (timelimit.value == 0)
-		M_Print (cbx, 160, 96, "none");
-	else
-		M_Print (cbx, 160, 96, va ("%i minutes", (int)timelimit.value));
-
-	M_Print (cbx, 0, 112, "         Episode");
-	// MED 01/06/97 added hipnotic episodes
-	if (hipnotic)
-		M_Print (cbx, 160, 112, hipnoticepisodes[startepisode].description);
-	// PGM 01/07/97 added rogue episodes
-	else if (rogue)
-		M_Print (cbx, 160, 112, rogueepisodes[startepisode].description);
-	else
-		M_Print (cbx, 160, 112, episodes[startepisode].description);
-
-	M_Print (cbx, 0, 120, "           Level");
-	// MED 01/06/97 added hipnotic episodes
-	if (hipnotic)
-	{
-		M_Print (cbx, 160, 120, hipnoticlevels[hipnoticepisodes[startepisode].firstLevel + startlevel].description);
-		M_Print (cbx, 160, 128, hipnoticlevels[hipnoticepisodes[startepisode].firstLevel + startlevel].name);
-	}
-	// PGM 01/07/97 added rogue episodes
-	else if (rogue)
-	{
-		M_Print (cbx, 160, 120, roguelevels[rogueepisodes[startepisode].firstLevel + startlevel].description);
-		M_Print (cbx, 160, 128, roguelevels[rogueepisodes[startepisode].firstLevel + startlevel].name);
-	}
-	else
-	{
-		M_Print (cbx, 160, 120, levels[episodes[startepisode].firstLevel + startlevel].description);
-		M_Print (cbx, 160, 128, levels[episodes[startepisode].firstLevel + startlevel].name);
-	}
-
-	// line cursor
-	for (int i = 0; i < NUM_MPGAMEOPTIONS; ++i)
-		M_Mouse_UpdateCursor (&mpgameoptions_cursor, 0, 400, mpgameoptions_cursor_table[i], 8, i);
-	Draw_Character (cbx, 144, mpgameoptions_cursor_table[mpgameoptions_cursor], 12 + ((int)(realtime * 4) & 1));
-}
-
-static void M_NetStart_Change (int dir)
-{
-	int	  count;
-	float f;
-
-	switch (mpgameoptions_cursor)
-	{
-	case 1:
-		maxplayers += dir;
-		if (maxplayers > svs.maxclientslimit)
-			maxplayers = svs.maxclientslimit;
-		if (maxplayers < 2)
-			maxplayers = 2;
-		break;
-
-	case 2:
-		Cvar_Set ("coop", coop.value ? "0" : "1");
-		break;
-
-	case 3:
-		count = (rogue) ? 6 : 2;
-		f = teamplay.value + dir;
-		if (f > count)
-			f = 0;
-		else if (f < 0)
-			f = count;
-		Cvar_SetValue ("teamplay", f);
-		break;
-
-	case 4:
-		f = skill.value + dir;
-		if (f > 3)
-			f = 0;
-		else if (f < 0)
-			f = 3;
-		Cvar_SetValue ("skill", f);
-		break;
-
-	case 5:
-		f = fraglimit.value + dir * 10;
-		if (f > 100)
-			f = 0;
-		else if (f < 0)
-			f = 100;
-		Cvar_SetValue ("fraglimit", f);
-		break;
-
-	case 6:
-		f = timelimit.value + dir * 5;
-		if (f > 60)
-			f = 0;
-		else if (f < 0)
-			f = 60;
-		Cvar_SetValue ("timelimit", f);
-		break;
-
-	case 7:
-		startepisode += dir;
-		// MED 01/06/97 added hipnotic count
-		if (hipnotic)
-			count = 6;
-		// PGM 01/07/97 added rogue count
-		// PGM 03/02/97 added 1 for dmatch episode
-		else if (rogue)
-			count = 4;
-		else if (registered.value)
-			count = 7;
-		else
-			count = 2;
-
-		if (startepisode < 0)
-			startepisode = count - 1;
-
-		if (startepisode >= count)
-			startepisode = 0;
-
-		startlevel = 0;
-		break;
-
-	case 8:
-		startlevel += dir;
-		// MED 01/06/97 added hipnotic episodes
-		if (hipnotic)
-			count = hipnoticepisodes[startepisode].levels;
-		// PGM 01/06/97 added hipnotic episodes
-		else if (rogue)
-			count = rogueepisodes[startepisode].levels;
-		else
-			count = episodes[startepisode].levels;
-
-		if (startlevel < 0)
-			startlevel = count - 1;
-
-		if (startlevel >= count)
-			startlevel = 0;
-		break;
-	}
-}
-
-static void M_MPGameOptions_Key (int key)
-{
-	switch (key)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_Net_f ();
-		break;
-
-	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
-		mpgameoptions_cursor--;
-		if (mpgameoptions_cursor < 0)
-			mpgameoptions_cursor = NUM_MPGAMEOPTIONS - 1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
-		mpgameoptions_cursor++;
-		if (mpgameoptions_cursor >= NUM_MPGAMEOPTIONS)
-			mpgameoptions_cursor = 0;
-		break;
-
-	case K_LEFTARROW:
-		if (mpgameoptions_cursor == 0)
-			break;
-		S_LocalSound ("misc/menu3.wav");
-		M_NetStart_Change (-1);
-		break;
-
-	case K_RIGHTARROW:
-		if (mpgameoptions_cursor == 0)
-			break;
-		S_LocalSound ("misc/menu3.wav");
-		M_NetStart_Change (1);
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		S_LocalSound ("misc/menu2.wav");
-		if (mpgameoptions_cursor == 0)
-		{
-			if (sv.active)
-				Cbuf_AddText ("disconnect\n");
-			Cbuf_AddText ("listen 0\n"); // so host_netport will be re-examined
-			Cbuf_AddText (va ("maxplayers %u\n", maxplayers));
-			SCR_BeginLoadingPlaque ();
-
-			if (hipnotic)
-				Cbuf_AddText (va ("map %s\n", hipnoticlevels[hipnoticepisodes[startepisode].firstLevel + startlevel].name));
-			else if (rogue)
-				Cbuf_AddText (va ("map %s\n", roguelevels[rogueepisodes[startepisode].firstLevel + startlevel].name));
-			else
-				Cbuf_AddText (va ("map %s\n", levels[episodes[startepisode].firstLevel + startlevel].name));
-
-			return;
-		}
-
-		M_NetStart_Change (1);
-		break;
-	}
-}
-
-//=============================================================================
-/* SEARCH MENU */
-
-static qboolean			 search_complete = false;
-static double			 search_complete_time;
-static enum slistScope_e search_last_scope = SLIST_LAN;
-
-static void M_Menu_Search_f (enum slistScope_e scope)
-{
-	M_MenuChanged ();
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	m_state = m_search;
-	slist_silent = true;
-	slist_scope = search_last_scope = scope;
-	search_complete = false;
-	NET_Slist_f ();
-}
-
-static void M_Search_Draw (cb_context_t *cbx)
-{
-	qpic_t *p;
-	int		x;
-
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	x = (320 / 2) - ((12 * 8) / 2) + 4;
-	M_DrawTextBox (cbx, x - 8, 32, 12, 1);
-	M_Print (cbx, x, 40, "Searching...");
-
-	if (slistInProgress)
-	{
-		NET_Poll ();
-		return;
-	}
-
-	if (!search_complete)
-	{
-		search_complete = true;
-		search_complete_time = realtime;
-	}
-
-	if (hostCacheCount)
-	{
-		M_Menu_ServerList_f ();
-		return;
-	}
-
-	M_PrintWhite (cbx, (320 / 2) - ((22 * 8) / 2), 64, "No Quake servers found");
-	if ((realtime - search_complete_time) < 3.0)
-		return;
-
-	M_Menu_LanConfig_f ();
-}
-
-static void M_Search_Key (int key) {}
-
-//=============================================================================
-/* SLIST MENU */
-
-static int		slist_cursor;
-static int		slist_first;
-static qboolean slist_sorted;
-#define SERVER_LIST_MAX_ON_SCREEN 21
-
-static void M_Menu_ServerList_f (void)
-{
-	M_MenuChanged ();
-	IN_Deactivate (true);
-	key_dest = key_menu;
-	m_state = m_slist;
-	slist_cursor = 0;
-	slist_first = 0;
-	m_return_onerror = false;
-	m_return_reason[0] = 0;
-	slist_sorted = false;
-}
-
-static void M_ServerList_Draw (cb_context_t *cbx)
-{
-	size_t	n;
-	qpic_t *p;
-
-	if (!slist_sorted)
-	{
-		slist_sorted = true;
-		NET_SlistSort ();
-	}
-
-	if (hostCacheCount > SERVER_LIST_MAX_ON_SCREEN)
-		M_DrawScrollbar (cbx, 0, 40, (float)(slist_first) / (hostCacheCount - SERVER_LIST_MAX_ON_SCREEN), SERVER_LIST_MAX_ON_SCREEN - 2);
-	M_Mouse_UpdateListCursor (&slist_cursor, 12, 400, 32, 8, SERVER_LIST_MAX_ON_SCREEN, slist_first);
-
-	p = Draw_CachePic ("gfx/p_multi.lmp");
-	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	for (n = 0; n < SERVER_LIST_MAX_ON_SCREEN && n < hostCacheCount; n++)
-		M_Print (cbx, 28, 32 + 8 * n, NET_SlistPrintServer (slist_first + n));
-	Draw_Character (cbx, 16, 32 + (slist_cursor - slist_first) * 8, 12 + ((int)(realtime * 4) & 1));
-
-	if (*m_return_reason)
-		M_PrintWhite (cbx, 16, 148, m_return_reason);
-}
-
-static void M_ServerList_Key (int k)
-{
-	if (M_HandleScrollBarKeys (k, &slist_cursor, &slist_first, hostCacheCount, SERVER_LIST_MAX_ON_SCREEN))
-		return;
-
-	switch (k)
-	{
-	case K_MOUSE2:
-	case K_ESCAPE:
-	case K_BBUTTON:
-		M_Menu_LanConfig_f ();
-		break;
-
-	case K_SPACE:
-		M_Menu_Search_f (search_last_scope);
-		break;
-
-	case K_MOUSE1:
-	case K_ENTER:
-	case K_KP_ENTER:
-	case K_ABUTTON:
-		S_LocalSound ("misc/menu2.wav");
-		m_return_state = m_state;
-		m_return_onerror = true;
-		slist_sorted = false;
-		IN_Activate ();
-		key_dest = key_game;
-		m_state = m_none;
-		Cbuf_AddText (va ("connect \"%s\"\n", NET_SlistPrintServerName (slist_cursor)));
-		break;
-
-	default:
-		break;
-	}
-}
-
-//=============================================================================
 /* Credits menu -- used by the 2021 re-release */
 
 static void M_Menu_Credits_f (void) {}
@@ -3430,11 +2282,11 @@ void M_Init (void)
 	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
 
 	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
-	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
-	Cmd_AddCommand ("menu_load", M_Menu_Load_f);
-	Cmd_AddCommand ("menu_save", M_Menu_Save_f);
-	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
-	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
+	Cmd_AddCommand ("menu_play", M_Menu_Play_f);
+	Cmd_AddCommand ("menu_ep1_select", M_Menu_Ep1_Select_f);
+	Cmd_AddCommand ("menu_ep2_select", M_Menu_Ep2_Select_f);
+	Cmd_AddCommand ("menu_ep3_select", M_Menu_Ep3_Select_f);
+	Cmd_AddCommand ("menu_ep4_select", M_Menu_Ep4_Select_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
@@ -3516,28 +2368,8 @@ void M_Draw (cb_context_t *cbx)
 		M_Main_Draw (cbx);
 		break;
 
-	case m_singleplayer:
-		M_SinglePlayer_Draw (cbx);
-		break;
-
-	case m_load:
-		M_Load_Draw (cbx);
-		break;
-
-	case m_save:
-		M_Save_Draw (cbx);
-		break;
-
-	case m_multiplayer:
-		M_MultiPlayer_Draw (cbx);
-		break;
-
-	case m_setup:
-		M_Setup_Draw (cbx);
-		break;
-
-	case m_net:
-		M_Net_Draw (cbx);
+	case m_play:
+		M_Play_Draw (cbx);
 		break;
 
 	case m_options:
@@ -3568,8 +2400,20 @@ void M_Draw (cb_context_t *cbx)
 		M_Help_Draw (cbx);
 		break;
 
-	case m_mods:
-		M_Mods_Draw (cbx);
+	case m_ep1_select:
+		M_Ep1_Select_Draw (cbx);
+		break;
+
+	case m_ep2_select:
+		M_Ep2_Select_Draw (cbx);
+		break;
+
+	case m_ep3_select:
+		M_Ep3_Select_Draw (cbx);
+		break;
+
+	case m_ep4_select:
+		M_Ep4_Select_Draw (cbx);
 		break;
 
 	case m_quit:
@@ -3582,22 +2426,6 @@ void M_Draw (cb_context_t *cbx)
 		}
 		else
 			M_Quit_Draw (cbx);
-		break;
-
-	case m_lanconfig:
-		M_LanConfig_Draw (cbx);
-		break;
-
-	case m_mpgameoptions:
-		M_MPGameOptions_Draw (cbx);
-		break;
-
-	case m_search:
-		M_Search_Draw (cbx);
-		break;
-
-	case m_slist:
-		M_ServerList_Draw (cbx);
 		break;
 	}
 
@@ -3621,28 +2449,8 @@ void M_Keydown (int key)
 		M_Main_Key (key);
 		return;
 
-	case m_singleplayer:
-		M_SinglePlayer_Key (key);
-		return;
-
-	case m_load:
-		M_Load_Key (key);
-		return;
-
-	case m_save:
-		M_Save_Key (key);
-		return;
-
-	case m_multiplayer:
-		M_MultiPlayer_Key (key);
-		return;
-
-	case m_setup:
-		M_Setup_Key (key);
-		return;
-
-	case m_net:
-		M_Net_Key (key);
+	case m_play:
+		M_Play_Key (key);
 		return;
 
 	case m_options:
@@ -3656,10 +2464,6 @@ void M_Keydown (int key)
 	case m_graphics:
 		M_GraphicsOptions_Key (key);
 		return;
-
-	case m_mods:
-		M_Mods_Key (key);
-		break;
 
 	case m_keys:
 		M_Keys_Key (key);
@@ -3677,24 +2481,24 @@ void M_Keydown (int key)
 		M_Help_Key (key);
 		return;
 
+	case m_ep1_select:
+		M_Ep1_Select_Key (key);
+		return;
+
+	case m_ep2_select:
+		M_Ep2_Select_Key (key);
+		return;
+
+	case m_ep3_select:
+		M_Ep3_Select_Key (key);
+		return;
+
+	case m_ep4_select:
+		M_Ep4_Select_Key (key);
+		return;
+
 	case m_quit:
 		M_Quit_Key (key);
-		return;
-
-	case m_lanconfig:
-		M_LanConfig_Key (key);
-		return;
-
-	case m_mpgameoptions:
-		M_MPGameOptions_Key (key);
-		return;
-
-	case m_search:
-		M_Search_Key (key);
-		break;
-
-	case m_slist:
-		M_ServerList_Key (key);
 		return;
 	}
 }
@@ -3703,14 +2507,8 @@ void M_Charinput (int key)
 {
 	switch (m_state)
 	{
-	case m_setup:
-		M_Setup_Char (key);
-		return;
 	case m_quit:
 		M_Quit_Char (key);
-		return;
-	case m_lanconfig:
-		M_LanConfig_Char (key);
 		return;
 	default:
 		return;
@@ -3721,22 +2519,9 @@ qboolean M_TextEntry (void)
 {
 	switch (m_state)
 	{
-	case m_setup:
-		return M_Setup_TextEntry ();
 	case m_quit:
 		return M_Quit_TextEntry ();
-	case m_lanconfig:
-		return M_LanConfig_TextEntry ();
 	default:
 		return false;
 	}
-}
-
-void M_ConfigureNetSubsystem (void)
-{
-	// enable/disable net systems to match desired config
-	Cbuf_AddText ("stopdemo\n");
-
-	if (IPXConfig || TCPIPConfig)
-		net_hostport = lan_config_port;
 }

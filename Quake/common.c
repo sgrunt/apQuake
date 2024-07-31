@@ -2387,34 +2387,14 @@ void COM_InitFilesystem (void) // johnfitz -- modified based on topaz's tutorial
 		COM_AddGameDirectory (GAMENAME);
 	}
 
+	COM_AddGameDirectory ("apquake");
+
 	/* this is the end of our base searchpath:
 	 * any set gamedirs, such as those from -game command line
 	 * arguments or by the 'game' console command will be freed
 	 * up to here upon a new game command. */
 	com_base_searchpaths = com_searchpaths;
 	COM_ResetGameDirectories ("");
-
-	// add mission pack requests (only one should be specified)
-	if (COM_CheckParm ("-rogue"))
-		COM_AddGameDirectory ("rogue");
-	if (COM_CheckParm ("-hipnotic"))
-		COM_AddGameDirectory ("hipnotic");
-	if (COM_CheckParm ("-quoth"))
-		COM_AddGameDirectory ("quoth");
-
-	for (i = 0;;)
-	{
-		i = COM_CheckParmNext (i, "-game");
-		if (!i || i >= com_argc - 1)
-			break;
-
-		p = com_argv[i + 1];
-		if (COM_ModForbiddenChars (p))
-			Sys_Error ("gamedir should be a single directory name, not a path\n");
-		com_modified = true;
-		if (p != NULL)
-			COM_AddGameDirectory (p);
-	}
 
 	COM_CheckRegistered ();
 }

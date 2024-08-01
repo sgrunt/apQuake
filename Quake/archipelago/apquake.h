@@ -7,6 +7,24 @@ extern "C"
 #endif
 
 #define AP_CHECK_MAX 64 // Arbitrary number
+#define AP_MAX_THING 1024 // Twice more than current max for every level
+
+typedef struct
+{
+    const char *classname;
+    int index;
+    int unreachable;
+} ap_thing_info_t;
+
+typedef struct
+{
+    const char* name;
+    int keys[2];
+    int check_count;
+    int thing_count;
+    ap_thing_info_t thing_infos[AP_MAX_THING];
+
+} ap_level_info_t;
 
 typedef struct
 {
@@ -57,9 +75,22 @@ typedef struct
     int goal;
 } ap_state_t;
 
+// Don't construct that manually, use ap_make_level_index()
+typedef struct
+{
+    int ep; // 0-based
+    int map; // 0-based
+} ap_level_index_t;
+
 extern ap_state_t ap_state;
 
 int apquake_init();
+void apquake_save_state();
+void apquake_shutdown();
+
+const char* apquake_get_seed();
+
+ap_level_state_t* ap_get_level_state(ap_level_index_t idx); // 1-based
 
 #ifdef __cplusplus
 }

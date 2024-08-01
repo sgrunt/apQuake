@@ -547,10 +547,10 @@ void setApItems(int items, int armortype) {
     ap_state.player_state.powers[3] = !!(items & IT_SUIT);
     ap_state.player_state.powers[4] = !!(items & IT_SUIT);
     ap_state.player_state.powers[5] = !!(items & IT_QUAD);
-    ap_state.player_state.powers[6] = !!(items & IT_SIGIL1);
-    ap_state.player_state.powers[7] = !!(items & IT_SIGIL2);
-    ap_state.player_state.powers[8] = !!(items & IT_SIGIL3);
-    ap_state.player_state.powers[9] = !!(items & IT_SIGIL4);
+    ap_state.player_state.powers[6] = !!(svs.serverflags & 1);
+    ap_state.player_state.powers[7] = !!(svs.serverflags & 2);
+    ap_state.player_state.powers[8] = !!(svs.serverflags & 4);
+    ap_state.player_state.powers[9] = !!(svs.serverflags & 8);
 }
 
 void Host_ShutdownServer (qboolean crash)
@@ -1075,7 +1075,9 @@ void Host_Init (void)
 	NET_Init ();
 	SV_Init ();
 
-	apquake_init();
+	if (!apquake_init()) {
+	    Sys_Error ("Failed to initialize Archipelago.");
+	}
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 

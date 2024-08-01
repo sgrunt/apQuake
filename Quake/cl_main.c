@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "bgmusic.h"
+#include "apquake.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
@@ -194,6 +195,8 @@ void CL_Disconnect (void)
 
 void CL_Disconnect_f (void)
 {
+	apquake_save_state();
+
 	CL_Disconnect ();
 	if (sv.active)
 		Host_ShutdownServer (false);

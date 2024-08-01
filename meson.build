@@ -150,7 +150,9 @@ deps = [
     cc.find_library('dl', required : false),
     dependency('threads'),
     dependency('sdl2'),
+    dependency('jsoncpp'),
 ]
+
 
 if build_machine.system() == 'darwin'
     molten_dirs = []

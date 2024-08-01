@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #include <windows.h>
 #endif
+#include "apquake.h"
 
 extern cvar_t pausable;
 extern cvar_t autoload;
@@ -790,6 +791,24 @@ map <servername>
 command from the console.  Active clients are kicked off.
 ======================
 */
+
+int getServerFlags() {
+    int ret = 0;
+    if (ap_state.player_state.powers[5]) {
+        ret |= 1;
+    }
+    if (ap_state.player_state.powers[6]) {
+        ret |= 2;
+    }
+    if (ap_state.player_state.powers[7]) {
+        ret |= 4;
+    }
+    if (ap_state.player_state.powers[8]) {
+        ret |= 8;
+    }
+    return ret;
+}
+
 static void Host_Map_f (void)
 {
 	int	 i;
@@ -828,7 +847,7 @@ static void Host_Map_f (void)
 	key_dest = key_game; // remove console or menu
 	SCR_BeginLoadingPlaque ();
 
-	svs.serverflags = 0; // haven't completed an episode yet
+	svs.serverflags = getServerFlags();
 	q_strlcpy (name, Cmd_Argv (1), sizeof (name));
 	// remove (any) trailing ".bsp" from mapname -- S.A.
 	p = strstr (name, ".bsp");

@@ -1667,7 +1667,7 @@ Initializes a client_t for a new net connection.  This will only be called
 once for a player each game, not once for each level change.
 ================
 */
-float getApItems() {
+int getApItems() {
     int items = 0;
 
     if (ap_state.player_state.weapon_owned[0]) {
@@ -1703,20 +1703,8 @@ float getApItems() {
     if (ap_state.player_state.powers[4]) {
         items |= IT_QUAD;
     }
-    if (ap_state.player_state.powers[5]) {
-        items |= IT_SIGIL1;
-    }
-    if (ap_state.player_state.powers[6]) {
-        items |= IT_SIGIL2;
-    }
-    if (ap_state.player_state.powers[7]) {
-        items |= IT_SIGIL3;
-    }
-    if (ap_state.player_state.powers[8]) {
-        items |= IT_SIGIL4;
-    }
 
-    return (float) items;
+    return items;
 }
 
 void SV_ConnectClient (int clientnum)

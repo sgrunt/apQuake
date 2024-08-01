@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "gl_heap.h"
 #endif
 
+#include "apquake.h"
 /*
 
 A server can allways be started, even if the system started out as a client
@@ -522,6 +523,36 @@ Host_ShutdownServer
 This only happens at the end of a game, not between levels
 ==================
 */
+
+void setApItems(int items, int armortype) {
+    if (items & IT_AXE) {
+        ap_state.player_state.weapon_owned[0] = 1;
+    } else {
+        ap_state.player_state.weapon_owned[0] = 0;
+    }
+
+    for (int i = 0; i < 7; i++) {
+        if (items & (1 << i)) {
+            ap_state.player_state.weapon_owned[i + 1] = 1;
+	} else {
+            ap_state.player_state.weapon_owned[i + 1] = 0;
+	}
+    }
+
+    ap_state.player_state.armor_type = armortype;
+
+    ap_state.player_state.powers[0] = !!(items & IT_SUPERHEALTH);
+    ap_state.player_state.powers[1] = !!(items & IT_INVISIBILITY);
+    ap_state.player_state.powers[2] = !!(items & IT_INVULNERABILITY);
+    ap_state.player_state.powers[3] = !!(items & IT_SUIT);
+    ap_state.player_state.powers[4] = !!(items & IT_SUIT);
+    ap_state.player_state.powers[5] = !!(items & IT_QUAD);
+    ap_state.player_state.powers[6] = !!(items & IT_SIGIL1);
+    ap_state.player_state.powers[7] = !!(items & IT_SIGIL2);
+    ap_state.player_state.powers[8] = !!(items & IT_SIGIL3);
+    ap_state.player_state.powers[9] = !!(items & IT_SIGIL4);
+}
+
 void Host_ShutdownServer (qboolean crash)
 {
 	int		  i;
@@ -532,6 +563,18 @@ void Host_ShutdownServer (qboolean crash)
 
 	if (!sv.active)
 		return;
+
+	PR_SwitchQCVM (&sv.qcvm);
+	setApItems(pr_global_struct->parm1, pr_global_struct->parm9);
+	ap_state.player_state.health = pr_global_struct->parm2;
+	ap_state.player_state.armor_points = pr_global_struct->parm3;
+	ap_state.player_state.ammo[0] = pr_global_struct->parm4;
+	ap_state.player_state.ammo[1] = pr_global_struct->parm5;
+	ap_state.player_state.ammo[2] = pr_global_struct->parm6;
+	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
+	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
+	ap_state.player_state.armor_type = pr_global_struct->parm9;
+	PR_SwitchQCVM(NULL);
 
 	sv.active = false;
 
@@ -1031,6 +1074,8 @@ void Host_Init (void)
 	Mod_Init ();
 	NET_Init ();
 	SV_Init ();
+
+	apquake_init();
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 

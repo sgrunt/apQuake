@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include "apquake.h"
 
 server_t		sv;
 server_static_t svs;
@@ -1666,13 +1667,65 @@ Initializes a client_t for a new net connection.  This will only be called
 once for a player each game, not once for each level change.
 ================
 */
+float getApItems() {
+    int items = 0;
+
+    if (ap_state.player_state.weapon_owned[0]) {
+        items |= IT_AXE;
+    }
+
+    for (int i = 0; i < 7; i++) {
+        if (ap_state.player_state.weapon_owned[i + 1]) {
+	    items |= 1 << i;
+	}
+    }
+
+    if (ap_state.player_state.armor_type >= 80) {
+    	items |= IT_ARMOR3;
+    } else if (ap_state.player_state.armor_type >= 60) {
+    	items |= IT_ARMOR2;
+    } else if (ap_state.player_state.armor_type >= 30) {
+        items |= IT_ARMOR1;
+    }
+
+    if (ap_state.player_state.powers[0]) {
+        items |= IT_SUPERHEALTH;
+    }
+    if (ap_state.player_state.powers[1]) {
+        items |= IT_INVISIBILITY;
+    }
+    if (ap_state.player_state.powers[2]) {
+        items |= IT_INVULNERABILITY;
+    }
+    if (ap_state.player_state.powers[3]) {
+        items |= IT_SUIT;
+    }
+    if (ap_state.player_state.powers[4]) {
+        items |= IT_QUAD;
+    }
+    if (ap_state.player_state.powers[5]) {
+        items |= IT_SIGIL1;
+    }
+    if (ap_state.player_state.powers[6]) {
+        items |= IT_SIGIL2;
+    }
+    if (ap_state.player_state.powers[7]) {
+        items |= IT_SIGIL3;
+    }
+    if (ap_state.player_state.powers[8]) {
+        items |= IT_SIGIL4;
+    }
+
+    return (float) items;
+}
+
 void SV_ConnectClient (int clientnum)
 {
 	edict_t			 *ent;
 	client_t		 *client;
 	int				  edictnum;
 	struct qsocket_s *netconnection;
-	int				  i;
+	//int				  i;
 	float			  spawn_parms[NUM_TOTAL_SPAWN_PARMS];
 
 	client = svs.clients + clientnum;
@@ -1710,6 +1763,8 @@ void SV_ConnectClient (int clientnum)
 	client->pextknown = false;
 	client->protocol_pext2 = 0;
 
+	// [AP] load spawn params from AP state
+#if 0
 	if (sv.loadgame)
 		memcpy (client->spawn_parms, spawn_parms, sizeof (spawn_parms));
 	else
@@ -1719,6 +1774,17 @@ void SV_ConnectClient (int clientnum)
 		for (i = 0; i < NUM_TOTAL_SPAWN_PARMS; i++)
 			client->spawn_parms[i] = (&pr_global_struct->parm1)[i];
 	}
+#endif
+	memset (client->spawn_parms, 0, sizeof (spawn_parms));
+	client->spawn_parms[0] = getApItems();
+	client->spawn_parms[1] = ap_state.player_state.health;
+	client->spawn_parms[2] = ap_state.player_state.armor_points;
+	client->spawn_parms[3] = ap_state.player_state.ammo[0];
+	client->spawn_parms[4] = ap_state.player_state.ammo[1];
+	client->spawn_parms[5] = ap_state.player_state.ammo[2];
+	client->spawn_parms[6] = ap_state.player_state.ammo[3];
+	client->spawn_parms[7] = ap_state.player_state.ready_weapon;
+	client->spawn_parms[8] = ap_state.player_state.armor_type;
 
 	SV_SendServerinfo (client);
 }

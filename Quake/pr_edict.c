@@ -1053,6 +1053,7 @@ void ED_LoadFromFile (const char *data)
 {
 	dfunction_t *func;
 	edict_t		*ent = NULL;
+	int	apindex = -1;
 	int			 inhibit = 0;
 	int			 usingspawnfunc = 0;
 
@@ -1061,6 +1062,7 @@ void ED_LoadFromFile (const char *data)
 	// parse ents
 	while (1)
 	{
+		apindex++;
 		// parse the opening brace
 		data = COM_Parse (data);
 		if (!data)
@@ -1088,9 +1090,12 @@ void ED_LoadFromFile (const char *data)
 			(current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY)) || (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
 			(current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)))
 		{
+			if ((((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
+			    || strncmp(PR_GetString(ent->v.classname), "item_", 5)) {
 			ED_Free (ent);
 			inhibit++;
 			continue;
+			}
 		}
 
 		//
@@ -1131,6 +1136,11 @@ void ED_LoadFromFile (const char *data)
 
 		pr_global_struct->self = EDICT_TO_PROG (ent);
 		PR_ExecuteProgram (func - qcvm->functions);
+		eval_t *val = GetEdictFieldValue (ent, ED_FindFieldOffset ("ApIndex"));
+		if (!val)
+			Sys_Error ("ApIndex field not found?");
+
+		val->_float = (float) apindex;
 	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);

@@ -964,6 +964,7 @@ static void Host_Restart_f (void)
 
 	q_strlcpy (mapname, sv.name, sizeof (mapname)); // mapname gets cleared in spawnserver
 	PR_SwitchQCVM (&sv.qcvm);
+	SV_SaveSpawnparms ();
 	SV_SpawnServer (mapname);
 	PR_SwitchQCVM (NULL);
 	if (!sv.active)

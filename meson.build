@@ -1,4 +1,4 @@
-project('vkquake', 'c', default_options : ['c_std=gnu11', 'buildtype=release'])
+project('vkquake', 'c', 'cpp', default_options : ['c_std=gnu11', 'buildtype=release'])
 
 shaders = [
     'Shaders/alias.frag',
@@ -140,6 +140,7 @@ srcs = [
     'Quake/world.c',
 	'Quake/hash_map.c',
 	'Quake/embedded_pak.c',
+    'Quake/archipelago/apquake.cc',
 ]
 
 cflags = ['-Wall', '-Wno-trigraphs', '-Werror', '-std=gnu11']
@@ -224,6 +225,7 @@ endif
 
 incdirs = [
     'Quake/mimalloc',
+    'Quake/archipelago',
 ]
 
 executable('vkquake', [srcs, shaders_c], dependencies : deps, include_directories : incdirs, c_args : cflags, c_pch: ['Quake/quakedef.h', 'Quake/quakedef.c'])

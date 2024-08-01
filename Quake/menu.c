@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "bgmusic.h"
+#include "apquake.h"
 
 void (*vid_menucmdfn) (void); // johnfitz
 void (*vid_menukeyfn) (int key);
@@ -819,6 +820,7 @@ static void M_SelectLevel(const char *level)
 	Cbuf_AddText ("maxplayers 1\n");
 	Cbuf_AddText ("deathmatch 0\n");
 	Cbuf_AddText ("coop 0\n");
+	Cbuf_AddText ( va ( "skill %d\n", ap_state.skill ) );
 	Cbuf_AddText ( va ( "map %s\n", level ) );
 }
 

@@ -1667,8 +1667,26 @@ Initializes a client_t for a new net connection.  This will only be called
 once for a player each game, not once for each level change.
 ================
 */
+ap_level_index_t get_level_for_map_name(const char *mapname) {
+	int ep = -1;
+	int map = -1;
+	if (!strncmp(mapname, "end", 4)) {
+		ep = 5;
+		map = 1;
+	} else if (mapname[0] == 'e'
+	           && mapname[1] >= '0' && mapname[1] <= '9'
+		   && mapname[2] == 'm'
+		   && mapname[3] >= '0' && mapname[3] <= '9') {
+		ep = mapname[1] - '0';
+		map = mapname[3] - '0';
+	}
+
+	return ap_make_level_index(ep, map);
+}
+
 int getApItems() {
     int items = 0;
+    ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
 
     if (ap_state.player_state.weapon_owned[0]) {
         items |= IT_AXE;
@@ -1686,6 +1704,13 @@ int getApItems() {
     	items |= IT_ARMOR2;
     } else if (ap_state.player_state.armor_type >= 30) {
         items |= IT_ARMOR1;
+    }
+
+    if (level_state->keys[0] > 0) {
+	items |= IT_KEY1;
+    }
+    if (level_state->keys[1] > 0) {
+	items |= IT_KEY2;
     }
 
     if (ap_state.player_state.powers[0] > 0) {
@@ -3145,16 +3170,9 @@ void SV_SpawnServer (const char *server)
 	int			i;
 	qcvm_t	   *vm = qcvm;
 
-	if (!strncmp(server, "end", 4)) {
-		ap_state.ep = 5;
-		ap_state.map = 1;
-	} else if (server[0] == 'e'
-	           && server[1] >= '0' && server[1] <= '9'
-		   && server[2] == 'm'
-		   && server[3] >= '0' && server[3] <= '9') {
-		ap_state.ep = server[1] - '0';
-		ap_state.map = server[3] - '0';
-	}
+	ap_level_index_t level_index = get_level_for_map_name(server);
+	ap_state.ep = level_index.ep + 1;
+	ap_state.map = level_index.map + 1;
 
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)

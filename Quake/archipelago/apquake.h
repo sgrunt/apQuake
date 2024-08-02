@@ -92,6 +92,8 @@ const char* apquake_get_seed();
 
 ap_level_state_t* ap_get_level_state(ap_level_index_t idx); // 1-based
 
+ap_level_index_t ap_make_level_index(int ep /* 1-based */, int map /* 1-based */);
+
 #ifdef __cplusplus
 }
 #endif

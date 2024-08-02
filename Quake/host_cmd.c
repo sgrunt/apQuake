@@ -1546,22 +1546,25 @@ void Host_Loadgame_f (const char *savename)
 	svs.clients->spawn_parms[11] = ap_state.player_state.powers[3];
 	svs.clients->spawn_parms[12] = ap_state.player_state.powers[4];
 
-	if (!was_in_level) {
-		((globalvars_t *)qcvm->globals)->parm1 = getApItems();
-		((globalvars_t *)qcvm->globals)->parm2 = ap_state.player_state.health;
-		((globalvars_t *)qcvm->globals)->parm3 = ap_state.player_state.armor_points;
-		((globalvars_t *)qcvm->globals)->parm4 = ap_state.player_state.ammo[0];
-		((globalvars_t *)qcvm->globals)->parm5 = ap_state.player_state.ammo[1];
-		((globalvars_t *)qcvm->globals)->parm6 = ap_state.player_state.ammo[2];
-		((globalvars_t *)qcvm->globals)->parm7 = ap_state.player_state.ammo[3];
-		((globalvars_t *)qcvm->globals)->parm8 = ap_state.player_state.ready_weapon;
-		((globalvars_t *)qcvm->globals)->parm9 = ap_state.player_state.armor_type;
-		((globalvars_t *)qcvm->globals)->parm10 = ap_state.player_state.powers[1];
-		((globalvars_t *)qcvm->globals)->parm11 = ap_state.player_state.powers[2];
-		((globalvars_t *)qcvm->globals)->parm12 = ap_state.player_state.powers[3];
-		((globalvars_t *)qcvm->globals)->parm13 = ap_state.player_state.powers[4];
+	((globalvars_t *)qcvm->globals)->parm1 = getApItems();
+	((globalvars_t *)qcvm->globals)->parm2 = ap_state.player_state.health;
+	((globalvars_t *)qcvm->globals)->parm3 = ap_state.player_state.armor_points;
+	((globalvars_t *)qcvm->globals)->parm4 = ap_state.player_state.ammo[0];
+	((globalvars_t *)qcvm->globals)->parm5 = ap_state.player_state.ammo[1];
+	((globalvars_t *)qcvm->globals)->parm6 = ap_state.player_state.ammo[2];
+	((globalvars_t *)qcvm->globals)->parm7 = ap_state.player_state.ammo[3];
+	((globalvars_t *)qcvm->globals)->parm8 = ap_state.player_state.ready_weapon;
+	((globalvars_t *)qcvm->globals)->parm9 = ap_state.player_state.armor_type;
+	((globalvars_t *)qcvm->globals)->parm10 = ap_state.player_state.powers[1];
+	((globalvars_t *)qcvm->globals)->parm11 = ap_state.player_state.powers[2];
+	((globalvars_t *)qcvm->globals)->parm12 = ap_state.player_state.powers[3];
+	((globalvars_t *)qcvm->globals)->parm13 = ap_state.player_state.powers[4];
 		
-		((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
+	((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
+	if (was_in_level) {
+		dfunction_t* fnc = ED_FindFunction("DecodeLevelParms");
+		PR_ExecuteProgram (fnc - qcvm->functions);
+	} else {
 		PR_ExecuteProgram (((globalvars_t *)qcvm->globals)->PutClientInServer);
 	}
 

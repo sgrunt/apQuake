@@ -391,3 +391,8 @@ const char* apquake_get_seed()
 {
         return ap_save_dir_name.c_str();
 }
+
+ap_level_index_t ap_make_level_index(int ep /* 1-based */, int map /* 1-based */)
+{
+	return { ep - 1, map - 1 };
+}

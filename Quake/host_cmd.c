@@ -31,8 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "apquake.h"
 
 extern cvar_t pausable;
-extern cvar_t autoload;
-extern cvar_t autofastload;
 
 int current_skill;
 
@@ -931,13 +929,6 @@ static void Host_Changelevel_f (void)
 		return;
 	}
 
-	if (autoload.value && sv.lastsave[0] && !q_strcasecmp (sv.name, Cmd_Argv (1)) && current_skill == (int)(skill.value + 0.5) && svs.maxclients == 1 &&
-		!cl.intermission && svs.clients[0].active && (svs.clients[0].edict->v.health <= 0))
-	{
-		Cbuf_AddText ("\nrestart\n");
-		return;
-	}
-
 	// johnfitz -- check for client having map before anything else
 	q_snprintf (level, sizeof (level), "maps/%s.bsp", Cmd_Argv (1));
 	if (!COM_FileExists (level, NULL))
@@ -973,13 +964,6 @@ static void Host_Restart_f (void)
 
 	if (cmd_source != src_command)
 		return;
-
-	if (autoload.value && sv.lastsave[0] && q_strcasecmp (Cmd_Argv (1), "noload") && q_strcasecmp (Cmd_Argv (1), "force"))
-	{
-		Cbuf_AddText (va ("-use;-jump;-attack;%sload \"%s\"\n", autoload.value >= 2 ? "fast" : "", sv.lastsave));
-		svs.changelevel_issued = false;
-		return;
-	}
 
 	q_strlcpy (mapname, sv.name, sizeof (mapname)); // mapname gets cleared in spawnserver
 	PR_SwitchQCVM (&sv.qcvm);
@@ -1086,15 +1070,14 @@ static void Host_SavegameComment (char text[SAVEGAME_COMMENT_LENGTH + 1])
 Host_Savegame_f
 ===============
 */
-static void Host_Savegame_f (void)
+void Host_Savegame_f ()
 {
 	char  name[MAX_OSPATH];
 	FILE *f;
 	int	  i;
 	char  comment[SAVEGAME_COMMENT_LENGTH + 1];
 
-	if (cmd_source != src_command)
-		return;
+	const char *savename = sv.name;
 
 	if (!sv.active)
 	{
@@ -1114,35 +1097,8 @@ static void Host_Savegame_f (void)
 		return;
 	}
 
-	if (Cmd_Argc () != 2)
-	{
-		Con_Printf ("save <savename> : save a game\n");
-		return;
-	}
+	q_snprintf (name, sizeof (name), "%s/%s", apquake_get_seed(), savename);
 
-	if (strstr (Cmd_Argv (1), ".."))
-	{
-		Con_Printf ("Relative pathnames are not allowed.\n");
-		return;
-	}
-
-	for (i = 0; i < svs.maxclients; i++)
-	{
-		if (svs.clients[i].active && (svs.clients[i].edict->v.health <= 0))
-		{
-			Con_Printf ("Can't savegame with a dead player\n");
-			return;
-		}
-	}
-
-	if (multiuser)
-	{
-		char *save_path = SDL_GetPrefPath ("vkQuake", COM_GetGameNames (true));
-		q_snprintf (name, sizeof (name), "%s%s", save_path, Cmd_Argv (1));
-		SDL_free (save_path);
-	}
-	else
-		q_snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
 	COM_AddExtension (name, ".sav", sizeof (name));
 
 	Con_Printf ("Saving game to %s...\n", name);
@@ -1229,8 +1185,8 @@ static void Host_Savegame_f (void)
 	PR_SwitchQCVM (NULL);
 	SaveList_Rebuild ();
 
-	if (strlen (Cmd_Argv (1)) < sizeof (sv.lastsave) - 1)
-		strcpy (sv.lastsave, Cmd_Argv (1));
+	if (strlen (savename) < sizeof (sv.lastsave) - 1)
+		strcpy (sv.lastsave, savename);
 }
 
 static void Send_Spawn_Info (client_t *c, qboolean loadgame)
@@ -1316,7 +1272,7 @@ static void Send_Spawn_Info (client_t *c, qboolean loadgame)
 Host_Loadgame_f
 ===============
 */
-static void Host_Loadgame_f (void)
+void Host_Loadgame_f (const char *savename)
 {
 	static char *start;
 
@@ -1330,48 +1286,24 @@ static void Host_Loadgame_f (void)
 	int			version;
 	float		spawn_parms[NUM_TOTAL_SPAWN_PARMS];
 	qboolean	was_recording = cls.demorecording;
-	int			old_skill = current_skill;
-	qboolean	fastload = !!strstr (Cmd_Argv (0), "fast") || autofastload.value;
-
-	if (cmd_source != src_command)
-		return;
-
-	if (Cmd_Argc () != 2)
-	{
-		Con_Printf ("%s <savename> : load a game\n", Cmd_Argv (0));
-		return;
-	}
-
-	if (strstr (Cmd_Argv (1), ".."))
-	{
-		Con_Printf ("Relative pathnames are not allowed.\n");
-		return;
-	}
+	qboolean	was_in_level = (ap_state.map != 0) ? 1 : 0;
 
 	cls.demonum = -1; // stop demo loop in case this fails
 
-	char	*save_path = multiuser ? SDL_GetPrefPath ("vkQuake", COM_GetGameNames (true)) : NULL;
+	const char	*save_path = apquake_get_seed(); 
 	qboolean loadable = false;
-	for (int j = (multiuser ? 0 : 1); j < 2; ++j)
+	q_snprintf (name, sizeof (name), "%s/%s", save_path, savename);
+	COM_AddExtension (name, ".sav", sizeof (name));
+
+	// avoid leaking if the previous Host_Loadgame_f failed with a Host_Error
+	if (start != NULL)
+		Mem_Free (start);
+
+	start = (char *)COM_LoadMallocFile_TextMode_OSPath (name, NULL);
+	if (start)
 	{
-		if (j == 0)
-			q_snprintf (name, sizeof (name), "%s%s", save_path, Cmd_Argv (1));
-		else
-			q_snprintf (name, sizeof (name), "%s/%s", com_gamedir, Cmd_Argv (1));
-		COM_AddExtension (name, ".sav", sizeof (name));
-
-		// avoid leaking if the previous Host_Loadgame_f failed with a Host_Error
-		if (start != NULL)
-			Mem_Free (start);
-
-		start = (char *)COM_LoadMallocFile_TextMode_OSPath (name, NULL);
-		if (start)
-		{
-			loadable = true;
-			break;
-		}
+		loadable = true;
 	}
-	SDL_free (save_path);
 
 	if (!loadable)
 	{
@@ -1409,31 +1341,12 @@ static void Host_Loadgame_f (void)
 	q_strlcpy (mapname, com_token, sizeof (mapname));
 	data = COM_ParseFloatNewline (data, &time);
 
-	if (fastload && (!sv.active || cls.signon != SIGNONS || svs.maxclients != 1))
-	{
-		Con_Printf ("Not in a local singleplayer game - can't fastload\n");
-		fastload = 0;
-	}
-	if (fastload && (strcmp (mapname, sv.name) || current_skill != old_skill))
-	{
-		Con_Printf ("Can't fastload (%s skill %d vs %s skill %d)\n", mapname, current_skill, sv.name, old_skill);
-		fastload = 0;
-	}
-	if (fastload && cl.intermission)
-	{
-		// we could if we reset cl.intermission and the music, but some mods still struggle
-		Con_Printf ("Can't fastload during an intermission\n");
-		fastload = 0;
-	}
-
-	if (!fastload)
-		CL_Disconnect_f ();
-	else if (cls.demorecording) // demo playback can't deal with backward timestamps, so record a map change
+	CL_Disconnect_f ();
+	if (cls.demorecording) // demo playback can't deal with backward timestamps, so record a map change
 		CL_Stop_f ();
 
 	PR_SwitchQCVM (&sv.qcvm);
-	if (!fastload)
-		SV_SpawnServer (mapname);
+	SV_SpawnServer (mapname);
 
 	if (!sv.active)
 	{
@@ -1444,16 +1357,11 @@ static void Host_Loadgame_f (void)
 		Con_Printf ("Couldn't load map\n");
 		return;
 	}
-	if (!fastload)
-	{
-		sv.paused = true; // pause until all clients connect
-		sv.loadgame = true;
-	}
-	else
-		S_StopAllSounds (true, true); // do this before parsing the edicts, since that may take a while
+	sv.paused = true; // pause until all clients connect
+	sv.loadgame = true;
 
 	if (was_recording)
-		CL_Resume_Record (fastload);
+		CL_Resume_Record (false);
 
 	// load the light styles
 	for (i = 0; i < MAX_LIGHTSTYLES; i++)
@@ -1461,9 +1369,6 @@ static void Host_Loadgame_f (void)
 		data = COM_ParseStringNewline (data);
 		sv.lightstyles[i] = (const char *)q_strdup (com_token);
 	}
-
-	if (fastload) // can be done for normal loads too, but keep the previous behavior
-		PR_ClearEdictStrings ();
 
 	// load the edicts out of the savegame file
 	entnum = -1; // -1 is the globals
@@ -1545,29 +1450,6 @@ static void Host_Loadgame_f (void)
 					if (idx >= 1 && idx <= NUM_TOTAL_SPAWN_PARMS)
 						spawn_parms[idx - 1] = atof (com_token);
 				}
-				else if (!strcmp (com_token, "fog") && fastload)
-				{
-					float d, r, g, b;
-					ext = COM_Parse (ext);
-					d = atof (com_token);
-					ext = COM_Parse (ext);
-					r = atof (com_token);
-					ext = COM_Parse (ext);
-					g = atof (com_token);
-					ext = COM_Parse (ext);
-					b = atof (com_token);
-					Fog_Update (d, r, g, b, 0.0f);
-				}
-				else if (!strcmp (com_token, "sky") && fastload)
-				{
-					ext = COM_Parse (ext);
-					Sky_LoadSkyBox (com_token);
-				}
-				else if (!strcmp (com_token, "skyfog") && fastload)
-				{
-					ext = COM_Parse (ext);
-					Sky_SetSkyfog (atof (com_token));
-				}
 				*end = '\n';
 				ext = end + 1;
 			}
@@ -1631,23 +1513,7 @@ static void Host_Loadgame_f (void)
 	for (i = entnum; i < qcvm->num_edicts; i++)
 		ED_Free (EDICT_NUM (i));
 
-	if (fastload)
-	{
-		sv.lastchecktime = 0.0;
-		memset (cl_dlights, 0, sizeof (cl_dlights));
-		memset (cl_temp_entities, 0, sizeof (cl_temp_entities));
-		memset (cl_beams, 0, sizeof (cl_beams));
-		V_ResetBlend ();
-		Fog_ResetFade ();
-		R_ClearParticles ();
-#ifdef PSET_SCRIPT
-		PScript_ClearParticles (false);
-#endif
-		SCR_CenterPrintClear ();
-
-		Send_Spawn_Info (svs.clients, true);
-	}
-	else if (entnum < qcvm->num_edicts)
+	if (entnum < qcvm->num_edicts)
 		Con_Warning ("Save game had less entities than map (%d < %d)\n", entnum, qcvm->num_edicts); // should be Host_Error, but try to recover
 
 	qcvm->num_edicts = q_max (qcvm->num_edicts, entnum);
@@ -1658,9 +1524,14 @@ static void Host_Loadgame_f (void)
 	for (i = 0; i < NUM_TOTAL_SPAWN_PARMS; i++)
 		svs.clients->spawn_parms[i] = spawn_parms[i];
 
+	if (!was_in_level) {
+		((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
+		PR_ExecuteProgram (((globalvars_t *)qcvm->globals)->PutClientInServer);
+	}
+
 	PR_SwitchQCVM (NULL);
 
-	if (cls.state != ca_dedicated && !fastload)
+	if (cls.state != ca_dedicated)
 	{
 		CL_EstablishConnection ("local");
 		Host_Reconnect_f ();
@@ -1668,8 +1539,8 @@ static void Host_Loadgame_f (void)
 	else
 		SCR_EndLoadingPlaque ();
 
-	if (strlen (Cmd_Argv (1)) < sizeof (sv.lastsave) - 1)
-		strcpy (sv.lastsave, Cmd_Argv (1));
+	if (strlen (savename) < sizeof (sv.lastsave) - 1)
+		strcpy (sv.lastsave, savename);
 }
 
 //============================================================================
@@ -2633,15 +2504,20 @@ static void Host_Startdemos_f (void)
 
 	if (!sv.active && cls.demonum != -1 && !cls.demoplayback)
 	{
-		cls.demonum = 0;
-		if (!fitzmode && !cl_startdemos.value)
-		{ /* QuakeSpasm customization: */
-			/* go straight to menu, no CL_NextDemo */
-			cls.demonum = -1;
+		cls.demonum = -1;
+		if (ap_state.map > 0) {
+			char mapname[9];
+			if (ap_state.ep == 5) {
+				q_snprintf(mapname, 8, "end");
+			} else {
+				q_snprintf(mapname, 8, "e%dm%d",
+					ap_state.ep,
+					ap_state.map);
+			}
+			Host_Loadgame_f(mapname);
+		} else {
 			Cbuf_InsertText ("menu_main\n");
-			return;
 		}
-		CL_NextDemo ();
 	}
 	else
 	{
@@ -2736,9 +2612,6 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("prespawn", Host_PreSpawn_f);
 	Cmd_AddCommand ("kick", Host_Kick_f);
 	Cmd_AddCommand ("ping", Host_Ping_f);
-	Cmd_AddCommand ("load", Host_Loadgame_f);
-	Cmd_AddCommand ("fastload", Host_Loadgame_f);
-	Cmd_AddCommand ("save", Host_Savegame_f);
 	Cmd_AddCommand ("give", Host_Give_f);
 
 	Cmd_AddCommand ("startdemos", Host_Startdemos_f);

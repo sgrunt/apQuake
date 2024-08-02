@@ -386,3 +386,8 @@ void save_state()
 
 	f << json;
 }
+
+const char* apquake_get_seed()
+{
+        return ap_save_dir_name.c_str();
+}

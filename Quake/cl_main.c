@@ -152,8 +152,15 @@ Sends a disconnect message to the server
 This is also called on Host_Error, so it shouldn't cause any errors
 =====================
 */
+void Host_Savegame_f();
+
 void CL_Disconnect (void)
 {
+	if (sv.active) {
+		apquake_save_state();
+		Host_Savegame_f();
+	}
+
 	if (key_dest == key_message)
 		Key_EndChat (); // don't get stuck in chat mode
 
@@ -195,7 +202,8 @@ void CL_Disconnect (void)
 
 void CL_Disconnect_f (void)
 {
-	apquake_save_state();
+	ap_state.ep = 0;
+	ap_state.map = 0;
 
 	CL_Disconnect ();
 	if (sv.active)

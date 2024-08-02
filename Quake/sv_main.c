@@ -3141,6 +3141,17 @@ void SV_SpawnServer (const char *server)
 	int			i;
 	qcvm_t	   *vm = qcvm;
 
+	if (!strncmp(server, "end", 4)) {
+		ap_state.ep = 5;
+		ap_state.map = 1;
+	} else if (server[0] == 'e'
+	           && server[1] >= '0' && server[1] <= '9'
+		   && server[2] == 'm'
+		   && server[3] >= '0' && server[3] <= '9') {
+		ap_state.ep = server[1] - '0';
+		ap_state.map = server[3] - '0';
+	}
+
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)
 		Cvar_Set ("hostname", "UNNAMED");

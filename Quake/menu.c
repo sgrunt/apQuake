@@ -91,7 +91,6 @@ extern qboolean keydown[256];
 extern cvar_t scr_fov;
 extern cvar_t scr_showfps;
 extern cvar_t scr_style;
-extern cvar_t autoload;
 extern cvar_t r_rtshadows;
 extern cvar_t r_particles;
 extern cvar_t r_md5models;
@@ -813,15 +812,28 @@ static void M_Play_Key (int key)
 	}
 }
 
+void Host_Loadgame_f(const char *savename);
+
 static void M_SelectLevel(const char *level)
 {
+	char filename[260];
+	FILE* file;
+
         IN_Activate ();
         key_dest = key_game;
 	Cbuf_AddText ("maxplayers 1\n");
 	Cbuf_AddText ("deathmatch 0\n");
 	Cbuf_AddText ("coop 0\n");
 	Cbuf_AddText ( va ( "skill %d\n", ap_state.skill ) );
-	Cbuf_AddText ( va ( "map %s\n", level ) );
+
+	snprintf(filename, 260, "%s/%s.sav", apquake_get_seed(), level);
+	file = fopen(filename, "rb");
+	if (file) {
+		fclose(file);
+		Host_Loadgame_f(level);
+	} else {
+		Cbuf_AddText ( va ( "map %s\n", level ) );
+	}
 }
 
 //=============================================================================
@@ -1096,7 +1108,6 @@ enum
 	GAME_OPT_HUD_DETAIL,
 	GAME_OPT_HUD_STYLE,
 	GAME_OPT_CROSSHAIR,
-	GAME_OPT_AUTOLOAD,
 	GAME_OPT_STARTUP_DEMOS,
 	GAME_OPT_SHOWFPS,
 	GAME_OPTIONS_ITEMS
@@ -1193,9 +1204,6 @@ static void M_GameOptions_AdjustSliders (int dir, qboolean mouse)
 		break;
 	case GAME_OPT_HUD_STYLE:
 		Cvar_SetValue ("scr_style", ((int)scr_style.value + 3 + dir) % 3);
-		break;
-	case GAME_OPT_AUTOLOAD: // load last save on death
-		Cvar_SetValue ("autoload", ((int)autoload.value + 3 + dir) % 3);
 		break;
 	case GAME_OPT_STARTUP_DEMOS:
 		Cvar_SetValue ("cl_startdemos", ((int)cl_startdemos.value + 2 + dir) % 2);
@@ -1334,11 +1342,6 @@ static void M_GameOptions_Draw (cb_context_t *cbx)
 				M_PrintHighlighted (cbx, MENU_VALUE_X + 2, y - 1, ".");
 			break;
 
-		case GAME_OPT_AUTOLOAD:
-			M_Print (cbx, MENU_LABEL_X, y, "Load last save");
-			M_Print (cbx, MENU_VALUE_X, y, (autoload.value >= 2) ? "fast" : (autoload.value ? "on" : "off"));
-			break;
-
 		case GAME_OPT_STARTUP_DEMOS:
 			M_Print (cbx, MENU_LABEL_X, y, "Startup Demos");
 			M_DrawCheckbox (cbx, MENU_VALUE_X, y, cl_startdemos.value);
@@ -1351,10 +1354,11 @@ static void M_GameOptions_Draw (cb_context_t *cbx)
 		}
 	}
 
-	if (GAME_OPTIONS_ITEMS > GAME_OPTIONS_PER_PAGE)
+#if (GAME_OPTIONS_ITEMS > GAME_OPTIONS_PER_PAGE)
 		M_DrawScrollbar (
 			cbx, MENU_SCROLLBAR_X, MENU_TOP + CHARACTER_SIZE, (float)(first_game_option) / (GAME_OPTIONS_ITEMS - GAME_OPTIONS_PER_PAGE),
 			GAME_OPTIONS_PER_PAGE - 2);
+#endif
 
 	// cursor
 	M_Mouse_UpdateListCursor (&game_options_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, GAME_OPTIONS_PER_PAGE, first_game_option);

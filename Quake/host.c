@@ -87,6 +87,9 @@ cvar_t developer = {"developer", "0", CVAR_NONE};
 static cvar_t pr_engine = {"pr_engine", ENGINE_NAME_AND_VER, CVAR_NONE};
 cvar_t		  temp1 = {"temp1", "0", CVAR_NONE};
 
+static cvar_t ap_rand_seed = {"ap_rand_seed", "0", CVAR_ROM};
+static cvar_t ap_reset_level_on_death = {"ap_reset_level_on_death", "0", CVAR_ROM};
+
 cvar_t devstats = {"devstats", "0", CVAR_NONE}; // johnfitz -- track developer statistics that vary every frame
 
 cvar_t campaign = {"campaign", "0", CVAR_NONE};	  // for the 2021 rerelease
@@ -323,6 +326,9 @@ void Host_InitLocal (void)
 	Cvar_RegisterVariable (&pausable);
 
 	Cvar_RegisterVariable (&temp1);
+
+	Cvar_RegisterVariable (&ap_rand_seed);
+	Cvar_RegisterVariable (&ap_reset_level_on_death);
 
 	Host_FindMaxClients ();
 }
@@ -1038,6 +1044,12 @@ static void Tests_Init ()
 #endif
 }
 
+void SetApCvars()
+{
+	Cvar_SetValueROM("ap_rand_seed", ap_get_rand_seed());
+	Cvar_SetValueROM("ap_reset_level_on_death", ap_state.reset_level_on_death);
+}
+
 /*
 ====================
 Host_Init
@@ -1071,6 +1083,8 @@ void Host_Init (void)
 	if (!apquake_init()) {
 	    Sys_Error ("Failed to initialize Archipelago.");
 	}
+
+	SetApCvars ();
 
 	Con_Printf ("Exe: " __TIME__ " " __DATE__ "\n");
 

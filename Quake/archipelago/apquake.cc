@@ -396,3 +396,15 @@ ap_level_index_t ap_make_level_index(int ep /* 1-based */, int map /* 1-based */
 {
 	return { ep - 1, map - 1 };
 }
+
+float ap_get_rand_seed()
+{
+    const char *str = apquake_get_seed();
+    unsigned long long hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return (float) hash;
+}

@@ -800,16 +800,16 @@ command from the console.  Active clients are kicked off.
 
 int getServerFlags() {
     int ret = 0;
-    if (ap_state.player_state.powers[5]) {
+    if (ap_state.player_state.powers[5] > 0) {
         ret |= 1;
     }
-    if (ap_state.player_state.powers[6]) {
+    if (ap_state.player_state.powers[6] > 0) {
         ret |= 2;
     }
-    if (ap_state.player_state.powers[7]) {
+    if (ap_state.player_state.powers[7] > 0) {
         ret |= 4;
     }
-    if (ap_state.player_state.powers[8]) {
+    if (ap_state.player_state.powers[8] > 0) {
         ret |= 8;
     }
     return ret;
@@ -1280,6 +1280,8 @@ static void Send_Spawn_Info (client_t *c, qboolean loadgame)
 Host_Loadgame_f
 ===============
 */
+int getApItems();
+
 void Host_Loadgame_f (const char *savename)
 {
 	static char *start;
@@ -1529,10 +1531,36 @@ void Host_Loadgame_f (const char *savename)
 	Mem_Free (start);
 	start = NULL;
 
-	for (i = 0; i < NUM_TOTAL_SPAWN_PARMS; i++)
-		svs.clients->spawn_parms[i] = spawn_parms[i];
+	// [AP] don't clobber spawnparms on loads
+	svs.clients->spawn_parms[0] = getApItems();
+	svs.clients->spawn_parms[1] = ap_state.player_state.health;
+	svs.clients->spawn_parms[2] = ap_state.player_state.armor_points;
+	svs.clients->spawn_parms[3] = ap_state.player_state.ammo[0];
+	svs.clients->spawn_parms[4] = ap_state.player_state.ammo[1];
+	svs.clients->spawn_parms[5] = ap_state.player_state.ammo[2];
+	svs.clients->spawn_parms[6] = ap_state.player_state.ammo[3];
+	svs.clients->spawn_parms[7] = ap_state.player_state.ready_weapon;
+	svs.clients->spawn_parms[8] = ap_state.player_state.armor_type;
+	svs.clients->spawn_parms[9] = ap_state.player_state.powers[1];
+	svs.clients->spawn_parms[10] = ap_state.player_state.powers[2];
+	svs.clients->spawn_parms[11] = ap_state.player_state.powers[3];
+	svs.clients->spawn_parms[12] = ap_state.player_state.powers[4];
 
 	if (!was_in_level) {
+		((globalvars_t *)qcvm->globals)->parm1 = getApItems();
+		((globalvars_t *)qcvm->globals)->parm2 = ap_state.player_state.health;
+		((globalvars_t *)qcvm->globals)->parm3 = ap_state.player_state.armor_points;
+		((globalvars_t *)qcvm->globals)->parm4 = ap_state.player_state.ammo[0];
+		((globalvars_t *)qcvm->globals)->parm5 = ap_state.player_state.ammo[1];
+		((globalvars_t *)qcvm->globals)->parm6 = ap_state.player_state.ammo[2];
+		((globalvars_t *)qcvm->globals)->parm7 = ap_state.player_state.ammo[3];
+		((globalvars_t *)qcvm->globals)->parm8 = ap_state.player_state.ready_weapon;
+		((globalvars_t *)qcvm->globals)->parm9 = ap_state.player_state.armor_type;
+		((globalvars_t *)qcvm->globals)->parm10 = ap_state.player_state.powers[1];
+		((globalvars_t *)qcvm->globals)->parm11 = ap_state.player_state.powers[2];
+		((globalvars_t *)qcvm->globals)->parm12 = ap_state.player_state.powers[3];
+		((globalvars_t *)qcvm->globals)->parm13 = ap_state.player_state.powers[4];
+		
 		((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
 		PR_ExecuteProgram (((globalvars_t *)qcvm->globals)->PutClientInServer);
 	}

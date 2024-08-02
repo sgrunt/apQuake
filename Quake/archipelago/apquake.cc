@@ -239,7 +239,7 @@ void load_state()
 	int first = 1;
 	for (int i = 0; i < ap_episode_count; ++i)
 	{
-		json_get_int(json["enabled_episodes"][i], ap_state.episodes[i]);
+		ap_state.episodes[i] = json["enabled_episodes"][i].asBool();
 		if (ap_state.episodes[i])
 		{
 			if (!first) printf(", ");
@@ -403,7 +403,7 @@ float ap_get_rand_seed()
     unsigned long long hash = 5381;
     int c;
 
-    while (c = *str++)
+    while ((c = *str++))
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
 
     return (float) hash;

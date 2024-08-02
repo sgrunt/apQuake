@@ -724,7 +724,29 @@ static episode_t episodes[] = {{"Welcome to Quake", 0, 1}, {"Doomed Dimension", 
 							   {"The Elder World", 23, 8}, {"Final Level", 31, 1},	   {"Deathmatch Arena", 32, 6}};
 
 int m_play_cursor;
-#define SINGLEPLAYER_ITEMS 5
+
+static int M_Play_NumItems ()
+{
+	int ret = 0;
+	int i;
+	for (i = 0; i < 5; i++) {
+		if (ap_state.episodes[i])
+			ret++;
+	}
+	return ret;
+}
+
+static int GetEpForSlot(int slot) {
+	int i = 0, tmpslot = 0;
+	for (i = 0; i < 5; i++) {
+		if (ap_state.episodes[i]) {
+			if (tmpslot == slot)
+				return i + 1;
+			tmpslot++;
+		}
+	}
+	return 0;
+}
 
 static void M_Menu_Play_f (void)
 {
@@ -740,22 +762,24 @@ static void M_Play_Draw (cb_context_t *cbx)
 {
 	qpic_t *p;
 	const int top = MENU_TOP;
+	const int num_items = M_Play_NumItems ();
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
 	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
 	//M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/sp_menu.lmp"));
 
-	for (int i = 0; i < SINGLEPLAYER_ITEMS; i++)
+	for (int i = 0; i < num_items; i++)
 	{
+		int ep = GetEpForSlot(i);
 		const int y = top + i * CHARACTER_SIZE;
-		if (i == SINGLEPLAYER_ITEMS - 1)
-			M_Print (cbx, MENU_LABEL_X, y, levels[episodes[i + 1].firstLevel].description);
+		if (ep == 5)
+			M_Print (cbx, MENU_LABEL_X, y, levels[episodes[ep].firstLevel].description);
 		else
-			M_Print (cbx, MENU_LABEL_X, y, episodes[i + 1].description);
+			M_Print (cbx, MENU_LABEL_X, y, episodes[ep].description);
 	}
 
-	M_Mouse_UpdateListCursor (&m_play_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, SINGLEPLAYER_ITEMS, 0);
+	M_Mouse_UpdateListCursor (&m_play_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, num_items, 0);
 	Draw_Character (cbx, MENU_CURSOR_X, top + (m_play_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
@@ -771,14 +795,14 @@ static void M_Play_Key (int key)
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (++m_play_cursor >= SINGLEPLAYER_ITEMS)
+		if (++m_play_cursor >= M_Play_NumItems ())
 			m_play_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
 		if (--m_play_cursor < 0)
-			m_play_cursor = SINGLEPLAYER_ITEMS - 1;
+			m_play_cursor = M_Play_NumItems () - 1;
 		break;
 
 	case K_MOUSE1:
@@ -787,25 +811,25 @@ static void M_Play_Key (int key)
 	case K_ABUTTON:
 		m_entersound = true;
 
-		switch (m_play_cursor)
+		switch (GetEpForSlot(m_play_cursor))
 		{
-		case 0:
+		case 1:
 			M_Menu_Ep1_Select_f();
 			break;
 
-		case 1:
+		case 2:
 			M_Menu_Ep2_Select_f();
 			break;
 
-		case 2:
+		case 3:
 			M_Menu_Ep3_Select_f();
 			break;
 
-		case 3:
+		case 4:
 			M_Menu_Ep4_Select_f();
 			break;
 
-		case 4:
+		case 5:
 			M_SelectLevel("end");
 			break;
 		}
@@ -813,11 +837,19 @@ static void M_Play_Key (int key)
 }
 
 void Host_Loadgame_f(const char *savename);
+ap_level_index_t get_level_for_map_name(const char *mapname);
 
 static void M_SelectLevel(const char *level)
 {
 	char filename[260];
 	FILE* file;
+
+	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(level));
+	if (!level_state->unlocked) {
+		m_entersound = false;
+		S_LocalSound("doors/medtry.wav");
+		return;
+	}
 
         IN_Activate ();
         key_dest = key_game;

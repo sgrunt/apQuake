@@ -2613,6 +2613,50 @@ void Host_Resetdemos (void)
 
 //=============================================================================
 
+void Host_Send_Ap_Item_f (void)
+{
+	edict_t *ent;
+	dfunction_t *func;
+
+	if (!*Cmd_Argv (1)) {
+		Con_Printf ("send_ap_item requires a class name\n");
+		return;
+	}
+
+	PR_SwitchQCVM (&sv.qcvm);
+	ent = ED_Alloc();
+	ent->v.classname = PR_SetEngineString(Cmd_Argv (1));
+
+	// Any health items we send out are assumed to be megahealth
+	if (!strncmp(Cmd_Argv(1), "item_health", 12)) {
+		ent->v.spawnflags = 2;
+	}
+
+	func = ED_FindFunction (va ("spawnfunc_%s", PR_GetString (ent->v.classname)));
+	if (!func)
+		func = ED_FindFunction (PR_GetString (ent->v.classname));
+
+	if (!func) {
+		Con_SafePrintf ("No spawn function for:\n");
+		ED_Print (ent);
+		ED_Free (ent);
+		PR_SwitchQCVM (NULL);
+		return;
+	}
+
+	pr_global_struct->self = EDICT_TO_PROG (ent);
+	PR_ExecuteProgram (func - qcvm->functions);
+
+        pr_global_struct->self = EDICT_TO_PROG (ent);
+        pr_global_struct->other = EDICT_TO_PROG (svs.clients->edict);
+        pr_global_struct->time = qcvm->time;
+        PR_ExecuteProgram (ent->v.touch);
+
+	ED_Free (ent);
+	
+	PR_SwitchQCVM (NULL);
+}
+
 /*
 ==================
 Host_InitCommands
@@ -2663,4 +2707,6 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("viewprev", Host_Viewprev_f);
 
 	Cmd_AddCommand ("mcache", Mod_Print);
+
+	Cmd_AddCommand ("send_ap_item", Host_Send_Ap_Item_f );
 }

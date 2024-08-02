@@ -41,6 +41,8 @@ void Mod_Print (void);
 Host_Quit_f
 ==================
 */
+void Host_Savegame_f ();
+
 void Host_Quit_f (void)
 {
 	if (key_dest != key_console && cls.state != ca_dedicated)
@@ -48,6 +50,12 @@ void Host_Quit_f (void)
 		M_Menu_Quit_f ();
 		return;
 	}
+
+	if (sv.active) {
+		apquake_save_state();
+		Host_Savegame_f();
+	}
+
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 

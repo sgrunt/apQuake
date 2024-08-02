@@ -535,12 +535,6 @@ void setApItems(int items, int armortype) {
 
     ap_state.player_state.armor_type = armortype;
 
-    ap_state.player_state.powers[0] = !!(items & IT_SUPERHEALTH);
-    ap_state.player_state.powers[1] = !!(items & IT_INVISIBILITY);
-    ap_state.player_state.powers[2] = !!(items & IT_INVULNERABILITY);
-    ap_state.player_state.powers[3] = !!(items & IT_SUIT);
-    ap_state.player_state.powers[4] = !!(items & IT_SUIT);
-    ap_state.player_state.powers[5] = !!(items & IT_QUAD);
     ap_state.player_state.powers[6] = !!(svs.serverflags & 1);
     ap_state.player_state.powers[7] = !!(svs.serverflags & 2);
     ap_state.player_state.powers[8] = !!(svs.serverflags & 4);
@@ -568,6 +562,11 @@ void Host_ShutdownServer (qboolean crash)
 	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
 	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
 	ap_state.player_state.armor_type = pr_global_struct->parm9;
+	ap_state.player_state.powers[0] = 0; // don't bother preserving megahealth flag - it doesn't seem to do anything
+	ap_state.player_state.powers[1] = q_max(pr_global_struct->parm10, 0.);
+	ap_state.player_state.powers[2] = q_max(pr_global_struct->parm11, 0.);
+	ap_state.player_state.powers[3] = q_max(pr_global_struct->parm12, 0.);
+	ap_state.player_state.powers[4] = q_max(pr_global_struct->parm13, 0.);
 	PR_SwitchQCVM(NULL);
 
 	sv.active = false;

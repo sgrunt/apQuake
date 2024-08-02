@@ -1688,19 +1688,19 @@ int getApItems() {
         items |= IT_ARMOR1;
     }
 
-    if (ap_state.player_state.powers[0]) {
+    if (ap_state.player_state.powers[0] > 0) {
         items |= IT_SUPERHEALTH;
     }
-    if (ap_state.player_state.powers[1]) {
+    if (ap_state.player_state.powers[1] > 0) {
         items |= IT_INVISIBILITY;
     }
-    if (ap_state.player_state.powers[2]) {
+    if (ap_state.player_state.powers[2] > 0) {
         items |= IT_INVULNERABILITY;
     }
-    if (ap_state.player_state.powers[3]) {
+    if (ap_state.player_state.powers[3] > 0) {
         items |= IT_SUIT;
     }
-    if (ap_state.player_state.powers[4]) {
+    if (ap_state.player_state.powers[4] > 0) {
         items |= IT_QUAD;
     }
 
@@ -1773,6 +1773,10 @@ void SV_ConnectClient (int clientnum)
 	client->spawn_parms[6] = ap_state.player_state.ammo[3];
 	client->spawn_parms[7] = ap_state.player_state.ready_weapon;
 	client->spawn_parms[8] = ap_state.player_state.armor_type;
+	client->spawn_parms[9] = ap_state.player_state.powers[1];
+	client->spawn_parms[10] = ap_state.player_state.powers[2];
+	client->spawn_parms[11] = ap_state.player_state.powers[3];
+	client->spawn_parms[12] = ap_state.player_state.powers[4];
 
 	SV_SendServerinfo (client);
 }

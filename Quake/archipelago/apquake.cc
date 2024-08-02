@@ -73,14 +73,14 @@ int apquake_init() {
 static int ap_get_map_count(int episode) {
     switch (episode)
     {
-        case 0:
-	case 3:
+        case 1:
+	case 4:
 	default: return 8;
 
-	case 1:
-	case 2: return 7;
+	case 2:
+	case 3: return 7;
 
-	case 4: return 1;
+	case 5: return 1;
     }
 }
 

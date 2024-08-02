@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include "quakedef.h"
+#include "apquake.h"
 
 // #define	STRINGTEMP_BUFFERS		16
 // #define	STRINGTEMP_LENGTH		1024
@@ -1364,11 +1365,13 @@ static void PF_ceil (void)
 	G_FLOAT (OFS_RETURN) = ceil (G_FLOAT (OFS_PARM0));
 }
 
+ap_level_index_t get_level_for_map_name(const char *mapname);
+
 static void PF_is_major_ap_item (void)
 {
-/*	int v;
-	v = (int) (G_FLOAT (OFS_PARM0));*/
-	G_FLOAT (OFS_RETURN) = 1.;
+	int index;
+	index = (int) (G_FLOAT (OFS_PARM0));
+	G_FLOAT (OFS_RETURN) = apquake_is_location_progression(get_level_for_map_name(sv.name), index);
 }
 
 /*
@@ -1401,8 +1404,10 @@ static void PF_pointcontents (void)
 
 static void PF_send_ap_check (void)
 {
-/*	int id;
-	id = (int) (G_FLOAT (OFS_PARM0));*/
+	int id;
+	id = (int) (G_FLOAT (OFS_PARM0));
+
+	apquake_check_location(get_level_for_map_name(sv.name), id);
 }
 
 /*
@@ -1725,6 +1730,7 @@ PF_completelevel
 */
 static void PF_sv_completelevel (void)
 {
+	apquake_complete_level(get_level_for_map_name(sv.name));
 }
 
 static void PF_cl_sound (void)

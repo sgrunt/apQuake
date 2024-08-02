@@ -6,6 +6,29 @@ extern "C"
 {
 #endif
 
+typedef struct
+{
+    const char* ip;
+    const char* game;
+    const char* player_name;
+    const char* passwd;
+    void (*message_callback)(const char*);
+    void (*give_item_callback)(const char* classname, int ep, int map);
+    void (*victory_callback)();
+
+    int override_skill; int skill;
+    int override_monster_rando; int monster_rando;
+    int override_item_rando; int item_rando;
+    int override_music_rando; int music_rando;
+    int override_flip_levels; int flip_levels;
+    int force_deathlink_off;
+    int override_reset_level_on_death; int reset_level_on_death;
+} ap_settings_t;
+
+
+#define AP_NOTIF_STATE_PENDING 0
+#define AP_NOTIF_STATE_DROPPING 1
+
 #define AP_CHECK_MAX 64 // Arbitrary number
 #define AP_MAX_THING 1024 // Twice more than current max for every level
 
@@ -83,8 +106,9 @@ typedef struct
 } ap_level_index_t;
 
 extern ap_state_t ap_state;
+extern int ap_is_in_game;
 
-int apquake_init();
+int apquake_init(ap_settings_t *settings);
 void apquake_save_state();
 void apquake_shutdown();
 
@@ -92,9 +116,17 @@ const char* apquake_get_seed();
 
 ap_level_state_t* ap_get_level_state(ap_level_index_t idx); // 1-based
 
+void apquake_check_location(ap_level_index_t idx, int index);
+
+int apquake_is_location_progression(ap_level_index_t idx, int index);
+
+void apquake_complete_level(ap_level_index_t idx);
+
 ap_level_index_t ap_make_level_index(int ep /* 1-based */, int map /* 1-based */);
 
 float ap_get_rand_seed();
+
+void apquake_update();
 
 #ifdef __cplusplus
 }

@@ -892,6 +892,8 @@ void _Host_Frame (double time)
 	if (host_speeds.value)
 		time3 = Sys_DoubleTime ();
 
+	apquake_update();
+
 	if (!isDedicated)
 	{
 		// get new key events
@@ -1085,7 +1087,14 @@ void Host_Init (void)
 	NET_Init ();
 	SV_Init ();
 
-	if (!apquake_init()) {
+	ap_settings_t ap_settings;
+	memset(&ap_settings, 0, sizeof(ap_settings_t));
+	ap_settings.game = "Quake";
+	ap_settings.player_name = "test";
+	ap_settings.passwd = "";
+	ap_settings.ip = "0.0.0.0";
+
+	if (!apquake_init(&ap_settings)) {
 	    Sys_Error ("Failed to initialize Archipelago.");
 	}
 

@@ -1364,6 +1364,13 @@ static void PF_ceil (void)
 	G_FLOAT (OFS_RETURN) = ceil (G_FLOAT (OFS_PARM0));
 }
 
+static void PF_is_major_ap_item (void)
+{
+/*	int v;
+	v = (int) (G_FLOAT (OFS_PARM0));*/
+	G_FLOAT (OFS_RETURN) = 1.;
+}
+
 /*
 =============
 PF_checkbottom
@@ -1390,6 +1397,12 @@ static void PF_pointcontents (void)
 	v = G_VECTOR (OFS_PARM0);
 
 	G_FLOAT (OFS_RETURN) = SV_PointContents (v);
+}
+
+static void PF_send_ap_check (void)
+{
+/*	int id;
+	id = (int) (G_FLOAT (OFS_PARM0));*/
 }
 
 /*
@@ -1705,6 +1718,15 @@ static void PF_sv_changelevel (void)
 	Cbuf_AddText (va ("changelevel %s\n", s));
 }
 
+/*
+================
+PF_completelevel
+================
+*/
+static void PF_sv_completelevel (void)
+{
+}
+
 static void PF_cl_sound (void)
 {
 	const char *sample;
@@ -1920,10 +1942,10 @@ const builtin_t pr_ssqcbuiltins[] = {
 	PF_rint,
 	PF_floor,
 	PF_ceil,
-	PF_Fixme,
+	PF_is_major_ap_item,
 	PF_checkbottom,
 	PF_pointcontents,
-	PF_Fixme,
+	PF_send_ap_check,
 	PF_fabs,
 	PF_aim,
 	PF_cvar,
@@ -1956,7 +1978,7 @@ const builtin_t pr_ssqcbuiltins[] = {
 	PF_sv_makestatic,
 
 	PF_sv_changelevel,
-	PF_Fixme,
+	PF_sv_completelevel,
 
 	PF_cvar_set,
 	PF_centerprint,

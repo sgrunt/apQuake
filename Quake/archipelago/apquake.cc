@@ -373,12 +373,10 @@ void save_state()
 	json["map"] = ap_state.map;
 
 	// Progression items (So we don't scout everytime we connect)
-#if 0
 	for (auto loc_id : ap_progressive_locations)
 	{
 		json["progressive_locations"].append(loc_id);
 	}
-#endif
 
 	json["victory"] = ap_state.victory;
 

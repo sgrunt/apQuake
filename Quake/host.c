@@ -559,6 +559,11 @@ void Host_ShutdownServer (qboolean crash)
 		return;
 
 	PR_SwitchQCVM (&sv.qcvm);
+
+	pr_global_struct->self = EDICT_TO_PROG (svs.clients->edict);
+	dfunction_t* fnc = ED_FindFunction("SetChangeParms_MidLevel");
+	PR_ExecuteProgram (fnc - qcvm->functions);
+
 	setApItems(pr_global_struct->parm1, pr_global_struct->parm9);
 	ap_state.player_state.health = pr_global_struct->parm2;
 	ap_state.player_state.armor_points = pr_global_struct->parm3;

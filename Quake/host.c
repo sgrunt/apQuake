@@ -1057,6 +1057,42 @@ void SetApCvars()
 	Cvar_SetValueROM("ap_reset_level_on_death", ap_state.reset_level_on_death);
 }
 
+void APQuake_Init (void)
+{
+	int i;
+	ap_settings_t ap_settings;
+
+	memset(&ap_settings, 0, sizeof(ap_settings_t));
+
+	i = COM_CheckParm("-apgame");
+	if (i && i < com_argc - 1)
+		ap_settings.game = q_strdup(com_argv[i + 1]);
+	else
+		ap_settings.game = "Quake";
+
+	i = COM_CheckParm("-applayer");
+	if (i && i < com_argc - 1)
+		ap_settings.player_name = q_strdup(com_argv[i + 1]);
+	else
+		Sys_Error("The -applayer parameter is required.");
+
+	i = COM_CheckParm("-apserver");
+	if (i && i < com_argc - 1)
+		ap_settings.ip = q_strdup(com_argv[i + 1]);
+	else
+		Sys_Error("The -apserver parameter is required.");
+
+	i = COM_CheckParm("-appassword");
+	if (i && i < com_argc - 1)
+		ap_settings.passwd = q_strdup(com_argv[i + 1]);
+	else
+		ap_settings.passwd = "";
+
+	if (!apquake_init(&ap_settings)) {
+	    Sys_Error ("Failed to initialize Archipelago.");
+	}
+}
+
 /*
 ====================
 Host_Init
@@ -1087,16 +1123,7 @@ void Host_Init (void)
 	NET_Init ();
 	SV_Init ();
 
-	ap_settings_t ap_settings;
-	memset(&ap_settings, 0, sizeof(ap_settings_t));
-	ap_settings.game = "Quake";
-	ap_settings.player_name = "test";
-	ap_settings.passwd = "";
-	ap_settings.ip = "0.0.0.0";
-
-	if (!apquake_init(&ap_settings)) {
-	    Sys_Error ("Failed to initialize Archipelago.");
-	}
+	APQuake_Init ();
 
 	SetApCvars ();
 

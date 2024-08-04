@@ -128,8 +128,7 @@ int apquake_init(ap_settings_t* settings) {
 
 	AP_NetworkVersion version = {0, 5, 0};
         AP_SetClientVersion(&version);
-	//AP_Init(ap_settings.ip, ap_settings.game, ap_settings.player_name, ap_settings.passwd);
-	AP_Init("./mwfile");
+	AP_Init(ap_settings.ip, ap_settings.game, ap_settings.player_name, ap_settings.passwd);
         AP_SetDeathLinkSupported(ap_settings.force_deathlink_off ? false : true);
         AP_SetItemClearCallback(f_itemclr);
         AP_SetItemRecvCallback(f_itemrecv);

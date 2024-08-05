@@ -580,6 +580,7 @@ void Host_ShutdownServer (qboolean crash)
 	ap_state.player_state.powers[4] = q_max(pr_global_struct->parm13, 0.);
 	PR_SwitchQCVM(NULL);
 
+	ap_is_in_game = 0;
 	sv.active = false;
 
 	// stop all client sounds immediately
@@ -1057,6 +1058,31 @@ void SetApCvars()
 	Cvar_SetValueROM("ap_reset_level_on_death", ap_state.reset_level_on_death);
 }
 
+void ap_message_callback (const char* message) {
+	S_LocalSound("misc/talk.wav");
+	Con_SafePrintf("%s\n", message);
+}
+
+void Host_Send_Ap_Item (const char *classname, int spawnflags);
+
+void ap_give_item_callback (const char* classname, int spawnflags, int ep, int map) {
+	// level-specific item, probably a key
+	if (ep > 0 && map > 0) {
+		char mapname[9];
+		if (ep == 5) {
+			q_strlcpy(mapname, "end", 9);
+		} else {
+			q_snprintf(mapname, 9, "e%dm%d", ep, map);
+		}
+		if (strncmp(sv.name, mapname, 9))
+			return; // not for this level
+	}
+	Host_Send_Ap_Item (classname, spawnflags);
+}
+
+void ap_victory_callback (void) {
+}
+
 void APQuake_Init (void)
 {
 	int i;
@@ -1087,6 +1113,10 @@ void APQuake_Init (void)
 		ap_settings.passwd = q_strdup(com_argv[i + 1]);
 	else
 		ap_settings.passwd = "";
+
+	ap_settings.message_callback = &ap_message_callback;
+	ap_settings.give_item_callback = &ap_give_item_callback;
+	ap_settings.victory_callback = &ap_victory_callback;
 
 	if (!apquake_init(&ap_settings)) {
 	    Sys_Error ("Failed to initialize Archipelago.");

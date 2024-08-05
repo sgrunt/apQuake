@@ -1368,6 +1368,7 @@ void Host_Loadgame_f (const char *savename)
 		return;
 	}
 	sv.paused = true; // pause until all clients connect
+	ap_is_in_game = 0;
 	sv.loadgame = true;
 
 	if (was_recording)
@@ -1882,10 +1883,12 @@ static void Host_Pause_f (void)
 
 		if (sv.paused)
 		{
+			ap_is_in_game = 0;
 			SV_BroadcastPrintf ("%s paused the game\n", PR_GetString (sv_player->v.netname));
 		}
 		else
 		{
+			ap_is_in_game = sv.active ? 1 : 0;
 			SV_BroadcastPrintf ("%s unpaused the game\n", PR_GetString (sv_player->v.netname));
 		}
 
@@ -1950,6 +1953,7 @@ static void Host_Spawn_f (void)
 	{ // loaded games are fully inited already
 		// if this is the last client to be connected, unpause
 		sv.paused = false;
+		ap_is_in_game = sv.active ? 1 : 0;
 	}
 	else
 	{
@@ -2613,24 +2617,15 @@ void Host_Resetdemos (void)
 
 //=============================================================================
 
-void Host_Send_Ap_Item_f (void)
+void Host_Send_Ap_Item (const char *classname, int spawnflags)
 {
 	edict_t *ent;
 	dfunction_t *func;
 
-	if (!*Cmd_Argv (1)) {
-		Con_Printf ("send_ap_item requires a class name\n");
-		return;
-	}
-
 	PR_SwitchQCVM (&sv.qcvm);
 	ent = ED_Alloc();
-	ent->v.classname = PR_SetEngineString(Cmd_Argv (1));
-
-	// Any health items we send out are assumed to be megahealth
-	if (!strncmp(Cmd_Argv(1), "item_health", 12)) {
-		ent->v.spawnflags = 2;
-	}
+	ent->v.classname = PR_SetEngineString(classname);
+	ent->v.spawnflags = spawnflags;
 
 	func = ED_FindFunction (va ("spawnfunc_%s", PR_GetString (ent->v.classname)));
 	if (!func)
@@ -2707,6 +2702,4 @@ void Host_InitCommands (void)
 	Cmd_AddCommand ("viewprev", Host_Viewprev_f);
 
 	Cmd_AddCommand ("mcache", Mod_Print);
-
-	Cmd_AddCommand ("send_ap_item", Host_Send_Ap_Item_f );
 }

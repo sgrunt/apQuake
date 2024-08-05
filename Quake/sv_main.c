@@ -3264,6 +3264,7 @@ void SV_SpawnServer (const char *server)
 
 	sv.state = ss_loading;
 	sv.paused = false;
+	ap_is_in_game = sv.active ? 1 : 0;
 
 	qcvm->time = 1.0;
 
@@ -3273,6 +3274,7 @@ void SV_SpawnServer (const char *server)
 	if (!qcvm->worldmodel || qcvm->worldmodel->type != mod_brush)
 	{
 		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
+		ap_is_in_game = 0;
 		sv.active = false;
 		return;
 	}
@@ -3290,6 +3292,7 @@ void SV_SpawnServer (const char *server)
 	if (qcvm->worldmodel->numsubmodels > MAX_MODELS)
 	{
 		Con_Printf ("too many inline models %s\n", sv.modelname);
+		ap_is_in_game = 0;
 		sv.active = false;
 		return;
 	}
@@ -3322,6 +3325,7 @@ void SV_SpawnServer (const char *server)
 
 	ED_LoadFromFile (qcvm->worldmodel->entities);
 
+	ap_is_in_game = 1;
 	sv.active = true;
 
 	SV_Precache_Model ("progs/player.mdl"); // Spike -- SV_CreateBaseline depends on this model.

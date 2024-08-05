@@ -921,6 +921,14 @@ float ap_get_rand_seed()
     return (float) hash;
 }
 
+std::string mask_text(std::string text) {
+	std::string ret = text;
+	for (size_t i = 0; i < ret.length(); i++) {
+		ret[i] |= 128;
+	}
+	return ret;
+}
+
 void apquake_update()
 {
 	if (ap_initialized)
@@ -944,24 +952,24 @@ void apquake_update()
 			case AP_MessageType::ItemSend:
 			{
 				AP_ItemSendMessage* o_msg = static_cast<AP_ItemSendMessage*>(msg);
-				colored_msg = "~9" + o_msg->item + "~2 was sent to ~4" + o_msg->recvPlayer;
+				colored_msg = mask_text(o_msg->item) + " was sent to " + mask_text(o_msg->recvPlayer);
 				break;
 			}
 			case AP_MessageType::ItemRecv:
 			{
 				AP_ItemRecvMessage* o_msg = static_cast<AP_ItemRecvMessage*>(msg);
-				colored_msg = "~2Received ~9" + o_msg->item + "~2 from ~4" + o_msg->sendPlayer;
+				colored_msg = "Received " + mask_text(o_msg->item) + " from " + mask_text(o_msg->sendPlayer);
 				break;
 			}
 			case AP_MessageType::Hint:
 			{
 				AP_HintMessage* o_msg = static_cast<AP_HintMessage*>(msg);
-				colored_msg = "~9" + o_msg->item + "~2 from ~4" + o_msg->sendPlayer + "~2 to ~4" + o_msg->recvPlayer + "~2 at ~3" + o_msg->location + (o_msg->checked ? " (Checked)" : " (Unchecked)");
+				colored_msg = mask_text(o_msg->item) + " from " + mask_text(o_msg->sendPlayer) + " to " + mask_text(o_msg->recvPlayer) + " at " + mask_text(o_msg->location + (o_msg->checked ? " (Checked)" : " (Unchecked)"));
 				break;
 			}
 			default:
 			{
-				colored_msg = "~2" + msg->text;
+				colored_msg = msg->text;
 				break;
 			}
 		}

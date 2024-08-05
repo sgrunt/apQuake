@@ -482,6 +482,27 @@ static void PF_vectoyaw (void)
 	G_FLOAT (OFS_RETURN) = yaw;
 }
 
+ap_level_index_t get_level_for_map_name(const char *mapname);
+
+static void PF_is_ap_location_checked (void)
+{
+	int index, j, lenj, ret;
+	index = (int) (G_FLOAT (OFS_PARM0));
+	ret = 0;
+
+	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
+	for (j = 0, lenj = level_state->check_count; j < lenj; ++j)
+	{
+		if (level_state->checks[j] == index)
+		{
+			ret = 1;
+			break;
+		}
+	}
+
+	G_FLOAT (OFS_RETURN) = ret;
+}
+
 /*
 =================
 PF_vectoangles
@@ -1365,8 +1386,6 @@ static void PF_ceil (void)
 	G_FLOAT (OFS_RETURN) = ceil (G_FLOAT (OFS_PARM0));
 }
 
-ap_level_index_t get_level_for_map_name(const char *mapname);
-
 static void PF_is_major_ap_item (void)
 {
 	int index;
@@ -1959,7 +1978,7 @@ const builtin_t pr_ssqcbuiltins[] = {
 	PF_nextent,
 	PF_particle,
 	PF_changeyaw,
-	PF_Fixme,
+	PF_is_ap_location_checked,
 	PF_vectoangles,
 
 	PF_sv_WriteByte,

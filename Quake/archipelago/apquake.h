@@ -13,7 +13,7 @@ typedef struct
     const char* player_name;
     const char* passwd;
     void (*message_callback)(const char*);
-    void (*give_item_callback)(const char* classname, int ep, int map);
+    void (*give_item_callback)(const char* classname, int spawnflags, int ep, int map);
     void (*victory_callback)();
 
     int override_skill; int skill;
@@ -34,18 +34,9 @@ typedef struct
 
 typedef struct
 {
-    const char *classname;
-    int index;
-    int unreachable;
-} ap_thing_info_t;
-
-typedef struct
-{
     const char* name;
     int keys[2];
     int check_count;
-    int thing_count;
-    ap_thing_info_t thing_infos[AP_MAX_THING];
 
 } ap_level_info_t;
 

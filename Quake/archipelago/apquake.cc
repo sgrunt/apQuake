@@ -1,4 +1,5 @@
 #include "apquake.h"
+#include "apquake_def.h"
 
 #include <cstring>
 #include <chrono>
@@ -59,13 +60,6 @@ void load_state();
 void save_state();
 void APSend(std::string msg);
 
-struct ap_item_t
-{
-    std::string classname;
-    int ep; // If classname is a key
-    int map; // If classname is a key
-};
-
 std::string string_to_hex(const char* str)
 {
     static const char hex_digits[] = "0123456789ABCDEF";
@@ -81,6 +75,33 @@ std::string string_to_hex(const char* str)
     }
 
     return out;
+}
+
+static std::vector<std::vector<ap_level_info_t>>& get_level_info_table()
+{
+	return ap_quake_level_infos;
+}
+
+static std::map<int /* ep */, std::map<int /* map */, std::map<int /* index */, int64_t /* loc id */>>>& get_location_table()
+{
+	return ap_quake_location_table;
+}
+
+ap_level_info_t* ap_get_level_info(ap_level_index_t idx)
+{
+        auto& level_info_table = get_level_info_table();
+        if (idx.ep < 0 || idx.ep >= (int)level_info_table.size()) return nullptr;
+        if (idx.map < 0 || idx.map >= (int)level_info_table[idx.ep].size()) return nullptr;
+        return &level_info_table[idx.ep][idx.map];
+}
+
+int validate_quake_location(ap_level_index_t idx, int index)
+{
+    auto& location_table = get_location_table();
+    if (idx.ep < 0 || idx.ep >= (int)location_table.size()) return 0;
+    if (idx.map < 0 || idx.map >= (int)location_table[idx.ep].size()) return 0;
+    auto location_for_level = location_table[idx.ep][idx.map];
+    return location_for_level.count(index);
 }
 
 int apquake_init(ap_settings_t* settings) {
@@ -223,7 +244,6 @@ int apquake_init(ap_settings_t* settings) {
 
         if (ap_progressive_locations.empty())
         {
-#if 0
                 std::set<int64_t> location_scouts;
 
                 const auto& loc_table = get_location_table();
@@ -236,7 +256,7 @@ int apquake_init(ap_settings_t* settings) {
                                 for (const auto& kv3 : kv2.second)
                                 {
                                         if (kv3.first == -1) continue;
-                                        if (validate_doom_location({kv1.first - 1, kv2.first - 1}, kv3.first))
+                                        if (validate_quake_location({kv1.first - 1, kv2.first - 1}, kv3.first))
                                         {
                                                 location_scouts.insert(kv3.second);
                                         }
@@ -260,7 +280,6 @@ int apquake_init(ap_settings_t* settings) {
                                 break;
                         }
                 }
-#endif
         }
         else
         {
@@ -287,46 +306,28 @@ static int ap_get_map_count(int episode) {
     }
 }
 
-ap_level_info_t* ap_get_level_info(ap_level_index_t idx)
-{
-	return nullptr;
-#if 0
-        auto& level_info_table = get_level_info_table();
-        if (idx.ep < 0 || idx.ep >= (int)level_info_table.size()) return nullptr;
-        if (idx.map < 0 || idx.map >= (int)level_info_table[idx.ep].size()) return nullptr;
-        return &level_info_table[idx.ep][idx.map];
-#endif
-}
-
 ap_level_state_t* ap_get_level_state(ap_level_index_t idx)
 {
         return &ap_state.level_states[idx.ep * max_map_count + idx.map];
 }
 
-const std::map<int64_t, ap_item_t> emptyitemtable = {};
-
 static const std::map<int64_t, ap_item_t>& get_item_type_table()
 {
-	return emptyitemtable;
+	return ap_quake_item_table;
 }
 
-const std::map<int /* ep */, std::map<int /* map */, std::map<int /* index */, int64_t /* loc id */>>> badloctable = {{1, {{1, {{}}}}}};
-
-static const std::map<int /* ep */, std::map<int /* map */, std::map<int /* index */, int64_t /* loc id */>>>& get_location_table()
-{
-	return badloctable;
-}
-
-const std::map<std::string, int> emptystringtable = {};
+const std::map<std::string, int> quake_keys_map = {{"item_key1", 0}, {"item_key2", 1}};
 
 static const std::map<std::string, int>& get_keys_map()
 {
-	return emptystringtable;
+	return quake_keys_map;
 }
+
+const std::map<std::string, int> quake_weapons_map = {{"weapon_supershotgun", 2}, {"weapon_nailgun", 3}, {"weapon_supernailgun", 4}, {"weapon_grenadelauncher", 5}, {"weapon_rocketlauncher", 6}, {"weapon_lightning", 7}};
 
 const std::map<std::string, int>& get_weapons_map()
 {
-	return emptystringtable;
+	return quake_weapons_map;
 }
 
 static bool is_loc_checked(ap_level_index_t idx, int index)
@@ -695,7 +696,7 @@ void f_itemrecv(int64_t item_id, bool notify_player)
 	}
 
 	// Give item to player
-	ap_settings.give_item_callback(item.classname.c_str(), item.ep, item.map);
+	ap_settings.give_item_callback(item.classname.c_str(), item.spawnflags, item.ep, item.map);
 }
 
 

@@ -1698,11 +1698,11 @@ int getApItems() {
 	}
     }
 
-    if (ap_state.player_state.armor_type >= 80) {
+    if (ap_state.player_state.armor_type > 60) {
     	items |= IT_ARMOR3;
-    } else if (ap_state.player_state.armor_type >= 60) {
+    } else if (ap_state.player_state.armor_type > 30) {
     	items |= IT_ARMOR2;
-    } else if (ap_state.player_state.armor_type >= 30) {
+    } else if (ap_state.player_state.armor_type > 0) {
         items |= IT_ARMOR1;
     }
 

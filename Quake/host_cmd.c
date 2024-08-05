@@ -963,6 +963,8 @@ Host_Restart_f
 Restarts the current server for a dead player
 ==================
 */
+void setApItemsFromParms ();
+
 static void Host_Restart_f (void)
 {
 	char mapname[MAX_QPATH];
@@ -976,6 +978,7 @@ static void Host_Restart_f (void)
 	q_strlcpy (mapname, sv.name, sizeof (mapname)); // mapname gets cleared in spawnserver
 	PR_SwitchQCVM (&sv.qcvm);
 	SV_SaveSpawnparms ();
+	setApItemsFromParms ();
 	SV_SpawnServer (mapname);
 	PR_SwitchQCVM (NULL);
 	if (!sv.active)

@@ -547,6 +547,24 @@ void setApItems(int items, int armortype) {
     ap_state.player_state.powers[9] = !!(svs.serverflags & 8);
 }
 
+void setApItemsFromParms (void)
+{
+	setApItems(pr_global_struct->parm1, pr_global_struct->parm9);
+	ap_state.player_state.health = pr_global_struct->parm2;
+	ap_state.player_state.armor_points = pr_global_struct->parm3;
+	ap_state.player_state.ammo[0] = pr_global_struct->parm4;
+	ap_state.player_state.ammo[1] = pr_global_struct->parm5;
+	ap_state.player_state.ammo[2] = pr_global_struct->parm6;
+	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
+	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
+	ap_state.player_state.armor_type = pr_global_struct->parm9;
+	ap_state.player_state.powers[0] = 0; // don't bother preserving megahealth flag - it doesn't seem to do anything
+	ap_state.player_state.powers[1] = q_max(pr_global_struct->parm10, 0.);
+	ap_state.player_state.powers[2] = q_max(pr_global_struct->parm11, 0.);
+	ap_state.player_state.powers[3] = q_max(pr_global_struct->parm12, 0.);
+	ap_state.player_state.powers[4] = q_max(pr_global_struct->parm13, 0.);
+}
+
 void Host_ShutdownServer (qboolean crash)
 {
 	int		  i;
@@ -563,21 +581,7 @@ void Host_ShutdownServer (qboolean crash)
 	pr_global_struct->self = EDICT_TO_PROG (svs.clients->edict);
 	dfunction_t* fnc = ED_FindFunction("SetChangeParms_MidLevel");
 	PR_ExecuteProgram (fnc - qcvm->functions);
-
-	setApItems(pr_global_struct->parm1, pr_global_struct->parm9);
-	ap_state.player_state.health = pr_global_struct->parm2;
-	ap_state.player_state.armor_points = pr_global_struct->parm3;
-	ap_state.player_state.ammo[0] = pr_global_struct->parm4;
-	ap_state.player_state.ammo[1] = pr_global_struct->parm5;
-	ap_state.player_state.ammo[2] = pr_global_struct->parm6;
-	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
-	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
-	ap_state.player_state.armor_type = pr_global_struct->parm9;
-	ap_state.player_state.powers[0] = 0; // don't bother preserving megahealth flag - it doesn't seem to do anything
-	ap_state.player_state.powers[1] = q_max(pr_global_struct->parm10, 0.);
-	ap_state.player_state.powers[2] = q_max(pr_global_struct->parm11, 0.);
-	ap_state.player_state.powers[3] = q_max(pr_global_struct->parm12, 0.);
-	ap_state.player_state.powers[4] = q_max(pr_global_struct->parm13, 0.);
+	setApItemsFromParms ();
 	PR_SwitchQCVM(NULL);
 
 	ap_is_in_game = 0;

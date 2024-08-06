@@ -107,6 +107,8 @@ const char* apquake_get_seed();
 
 ap_level_state_t* ap_get_level_state(ap_level_index_t idx); // 1-based
 
+ap_level_info_t* ap_get_level_info(ap_level_index_t idx);
+
 void apquake_check_location(ap_level_index_t idx, int index);
 
 int apquake_is_location_progression(ap_level_index_t idx, int index);

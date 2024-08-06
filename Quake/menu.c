@@ -758,6 +758,44 @@ static void M_Menu_Play_f (void)
 	m_state = m_play;
 }
 
+static char level_description[128];
+
+static const char *M_GetLevelDescription (int ep, int map)
+{
+	ap_level_index_t lv = ap_make_level_index(ep, map);
+	ap_level_state_t *level_state = ap_get_level_state(lv);
+	ap_level_info_t *level_info = ap_get_level_info(lv);
+	char lockstate = ' ';
+	char key1 = ' ';
+	char key2 = ' ';
+	if (!level_state->unlocked)
+		lockstate = '\x01'; // M_Print rotates these by 128
+	if (level_state->completed)
+		lockstate = '\x0d';
+	if (level_info->keys[0])
+	{
+		if (level_state->keys[0])
+			key1 = '\x8b';
+		else
+			key1 = '\x8f';
+	}
+	if (level_info->keys[1])
+	{
+		if (level_state->keys[1])
+			key2 = '\x0b';
+		else
+			key2 = '\x0f';
+	}
+	q_snprintf(level_description, 128, "%c %s (%d/%d) %c%c",
+		lockstate,
+		levels[episodes[ep].firstLevel + map - 1].description,
+		level_state->check_count,
+		level_info->check_count,
+		key1,
+		key2);
+	return level_description;
+}
+
 static void M_Play_Draw (cb_context_t *cbx)
 {
 	qpic_t *p;
@@ -774,7 +812,7 @@ static void M_Play_Draw (cb_context_t *cbx)
 		int ep = GetEpForSlot(i);
 		const int y = top + i * CHARACTER_SIZE;
 		if (ep == 5)
-			M_Print (cbx, MENU_LABEL_X, y, levels[episodes[ep].firstLevel].description);
+			M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(5, 1));
 		else
 			M_Print (cbx, MENU_LABEL_X, y, episodes[ep].description);
 	}
@@ -895,7 +933,7 @@ static void M_Ep1_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[1].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[1].firstLevel + i].description);
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(1, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep1_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[1].levels, 0);
@@ -958,7 +996,7 @@ static void M_Ep2_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[2].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[2].firstLevel + i].description);
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(2, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep2_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[2].levels, 0);
@@ -1021,7 +1059,7 @@ static void M_Ep3_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[3].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[3].firstLevel + i].description);
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(3, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep3_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[3].levels, 0);
@@ -1084,7 +1122,7 @@ static void M_Ep4_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[4].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, levels[episodes[4].firstLevel + i].description);
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(4, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep4_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[4].levels, 0);

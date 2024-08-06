@@ -3174,6 +3174,8 @@ void SV_SpawnServer (const char *server)
 	ap_state.ep = level_index.ep + 1;
 	ap_state.map = level_index.map + 1;
 
+	Cvar_SetValueROM("ap_rand_seed", ap_get_rand_seed() + (ap_state.ep * 9) + ap_state.map);
+
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)
 		Cvar_Set ("hostname", "UNNAMED");

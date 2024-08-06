@@ -117,7 +117,7 @@ void apquake_complete_level(ap_level_index_t idx);
 
 ap_level_index_t ap_make_level_index(int ep /* 1-based */, int map /* 1-based */);
 
-float ap_get_rand_seed();
+unsigned long long ap_get_rand_seed();
 
 void apquake_update();
 

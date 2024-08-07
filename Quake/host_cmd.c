@@ -1549,6 +1549,7 @@ void Host_Loadgame_f (const char *savename)
 	svs.clients->spawn_parms[10] = ap_state.player_state.powers[2];
 	svs.clients->spawn_parms[11] = ap_state.player_state.powers[3];
 	svs.clients->spawn_parms[12] = ap_state.player_state.powers[4];
+	svs.clients->spawn_parms[13] = ap_state.player_state.powers[0];
 
 	((globalvars_t *)qcvm->globals)->serverflags = getServerFlags();
 	((globalvars_t *)qcvm->globals)->parm1 = getApItems();
@@ -1564,6 +1565,7 @@ void Host_Loadgame_f (const char *savename)
 	((globalvars_t *)qcvm->globals)->parm11 = ap_state.player_state.powers[2];
 	((globalvars_t *)qcvm->globals)->parm12 = ap_state.player_state.powers[3];
 	((globalvars_t *)qcvm->globals)->parm13 = ap_state.player_state.powers[4];
+	((globalvars_t *)qcvm->globals)->parm14 = ap_state.player_state.powers[0];
 		
 	((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
 	if (was_in_level) {

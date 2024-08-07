@@ -1808,6 +1808,7 @@ void SV_ConnectClient (int clientnum)
 	client->spawn_parms[10] = ap_state.player_state.powers[2];
 	client->spawn_parms[11] = ap_state.player_state.powers[3];
 	client->spawn_parms[12] = ap_state.player_state.powers[4];
+	client->spawn_parms[13] = ap_state.player_state.powers[0];
 
 	SV_SendServerinfo (client);
 }

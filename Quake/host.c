@@ -562,7 +562,7 @@ void setApItemsFromParms (void)
 	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
 	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
 	ap_state.player_state.armor_type = pr_global_struct->parm9;
-	ap_state.player_state.powers[0] = 0; // don't bother preserving megahealth flag - it doesn't seem to do anything
+	ap_state.player_state.powers[0] = q_max(pr_global_struct->parm14, 0.);
 	ap_state.player_state.powers[1] = q_max(pr_global_struct->parm10, 0.);
 	ap_state.player_state.powers[2] = q_max(pr_global_struct->parm11, 0.);
 	ap_state.player_state.powers[3] = q_max(pr_global_struct->parm12, 0.);

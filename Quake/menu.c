@@ -548,7 +548,7 @@ void M_Mouse_UpdateCursor (int *cursor, int left, int right, int top, int item_h
 //=============================================================================
 /* MAIN MENU */
 
-#define MAIN_ITEMS 5
+#define MAIN_ITEMS 4
 
 void M_Menu_Main_f (void)
 {
@@ -563,36 +563,25 @@ void M_Menu_Main_f (void)
 	m_state = m_main;
 }
 
-static qpic_t *Get_Menu2 ()
-{
-	qboolean base_game = COM_GetGameNames (false)[0] == 0;
-	// Check if user has actually installed vkquake.pak, otherwise fall back to old menu
-	return (base_game && registered.value) ? Draw_TryCachePic ("gfx/mainmenu2.lmp", TEXPREF_ALPHA | TEXPREF_PAD | TEXPREF_NOPICMIP) : NULL;
-}
-
 void M_Main_Draw (cb_context_t *cbx)
 {
 	int		f;
 	qpic_t *p;
-	qpic_t *menu2 = Get_Menu2 ();
-	int		main_items = MAIN_ITEMS + (menu2 ? 1 : 0);
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
 	p = Draw_CachePic ("gfx/ttl_main.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
 
-	M_DrawTransPic (cbx, 72, 32, menu2 ? menu2 : Draw_CachePic ("gfx/mainmenu.lmp"));
+	M_DrawTransPic (cbx, 72, 32, sv.active ? Draw_CachePic ("gfx/apmenu2.lmp") : Draw_CachePic ("gfx/apmenu.lmp"));
 
 	f = (int)(realtime * 10) % 6;
 
-	M_Mouse_UpdateListCursor (&m_main_cursor, 70, 320, 32, 20, main_items, 0);
+	M_Mouse_UpdateListCursor (&m_main_cursor, 70, 320, 32, 20, MAIN_ITEMS, 0);
 	M_DrawTransPic (cbx, 54, 32 + m_main_cursor * 20, Draw_CachePic (va ("gfx/menudot%i.lmp", f + 1)));
 }
 
 void M_Main_Key (int key)
 {
-	qpic_t *menu2 = Get_Menu2 ();
-
 	switch (key)
 	{
 	case K_MOUSE2:
@@ -606,14 +595,14 @@ void M_Main_Key (int key)
 
 	case K_DOWNARROW:
 		S_LocalSound ("misc/menu1.wav");
-		if (++m_main_cursor >= (MAIN_ITEMS + (menu2 ? 1 : 0)))
+		if (++m_main_cursor >= MAIN_ITEMS)
 			m_main_cursor = 0;
 		break;
 
 	case K_UPARROW:
 		S_LocalSound ("misc/menu1.wav");
 		if (--m_main_cursor < 0)
-			m_main_cursor = (MAIN_ITEMS + (menu2 ? 1 : 0)) - 1;
+			m_main_cursor = MAIN_ITEMS - 1;
 		break;
 
 	case K_ENTER:
@@ -624,27 +613,23 @@ void M_Main_Key (int key)
 		{
 		case 0:
 			if (sv.active)
-				M_Kill ();
+				M_Menu_Options_f ();
 			else
 				M_Menu_Play_f ();
 			break;
 
 		case 1:
+			if (sv.active)
+				M_Kill ();
+			else
+				M_Menu_Options_f ();
 			break;
 
 		case 2:
-			M_Menu_Options_f ();
-			break;
-
-		case 3:
 			M_Menu_Help_f ();
 			break;
 
-		case 4:
-			if (!menu2)
-				M_Menu_Quit_f ();
-			break;
-		case 5:
+		case 3:
 			M_Menu_Quit_f ();
 			break;
 		}

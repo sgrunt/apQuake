@@ -116,6 +116,7 @@ std::map<int /* ep */, std::map<int /* map */, std::map<int /* index */, int64_t
 			{241, 721075},
 			{292, 721076},
 			{368, 721077},
+			{373, 721360},
 		}},
 		{3, {
 			{-1, 721338},
@@ -148,6 +149,7 @@ std::map<int /* ep */, std::map<int /* map */, std::map<int /* index */, int64_t
 			{473, 721101},
 			{474, 721102},
 			{475, 721103},
+			{504, 721359},
 			{509, 721104},
 			{513, 721105},
 			{514, 721106},
@@ -570,9 +572,9 @@ std::vector<std::vector<ap_level_info_t>> ap_quake_level_infos =
 	},
 	{
 		{"The Installation (E2M1)", {true, true}, 14},
-		{"The Ogre Citadel (E2M2)", {false, true}, 9},
+		{"The Ogre Citadel (E2M2)", {false, true}, 10},
 		{"The Crypt of Decay (E2M3)", {false, true}, 12},
-		{"The Ebon Fortress (E2M4)", {true, true}, 18},
+		{"The Ebon Fortress (E2M4)", {true, true}, 19},
 		{"The Wizard's Manse (E2M5)", {false, true}, 9},
 		{"The Dismal Oubliette (E2M6)", {false, true}, 10},
 		{"The Underearth (E2M7)", {false, true}, 7},

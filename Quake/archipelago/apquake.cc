@@ -104,6 +104,55 @@ int validate_quake_location(ap_level_index_t idx, int index)
     return location_for_level.count(index);
 }
 
+static std::map<int /* ep */, std::map<int /* map */, int /* track */>> quake_music_map = {
+	{1, {
+		{1, 6},
+		{2, 8},
+		{3, 9},
+		{4, 5},
+		{5, 11},
+		{6, 4},
+		{7, 7},
+		{8, 10},
+	}},
+	{2, {
+		{1, 6},
+		{2, 8},
+		{3, 9},
+		{4, 5},
+		{5, 11},
+		{6, 4},
+		{7, 7},
+	}},
+	{3, {
+		{1, 6},
+		{2, 8},
+		{3, 9},
+		{4, 8},
+		{5, 11},
+		{6, 4},
+		{7, 5},
+	}},
+	{4, {
+		{1, 6},
+		{2, 8},
+		{3, 9},
+		{4, 5},
+		{5, 11},
+		{6, 4},
+		{7, 7},
+		{8, 10},
+	}},
+	{5, {
+		{1, 4},
+	}},
+};
+
+static int get_original_music_for_level(int ep, int map)
+{
+	return quake_music_map[ep][map];
+}
+
 int apquake_init(ap_settings_t* settings) {
         ap_state.level_states = new ap_level_state_t[ap_episode_count * max_map_count];
         ap_state.episodes = new int[ap_episode_count];
@@ -241,6 +290,51 @@ int apquake_init(ap_settings_t* settings) {
                 printf("APQUAKE: No episode selected, selecting episode 1\n");
                 ap_state.episodes[0] = 1;
         }
+
+        // Map original music to every level to start
+        for (int ep = 0; ep < ap_episode_count; ++ep)
+        {
+                int map_count = ap_get_map_count(ep + 1);
+                for (int map = 0; map < map_count; ++map)
+                        ap_state.level_states[ep * max_map_count + map].music = get_original_music_for_level(ep + 1, map + 1);
+        }
+
+	// Randomly shuffle music
+	if (ap_state.random_music > 0)
+	{
+		srand(ap_get_rand_seed());
+		// Collect music for all selected levels
+		std::vector<int> music_pool;
+		for (int ep = 0; ep < ap_episode_count; ++ep)
+		{
+			if (ap_state.episodes[ep] || ap_state.random_music == 2)
+			{
+				int map_count = ap_get_map_count(ep + 1);
+				for (int map = 0; map < map_count; ++map)
+					music_pool.push_back(ap_state.level_states[ep * max_map_count + map].music);
+			}
+		}
+
+		// Shuffle
+		printf("APQuake: Random Music:\n");
+		for (int ep = 0; ep < ap_episode_count; ++ep)
+		{
+			if (ap_state.episodes[ep])
+			{
+				int map_count = ap_get_map_count(ep + 1);
+				for (int map = 0; map < map_count; ++map)
+				{
+					int rnd = rand() % (int)music_pool.size();
+					int mus = music_pool[rnd];
+					music_pool.erase(music_pool.begin() + rnd);
+					ap_state.level_states[ep * max_map_count + map].music = mus;
+
+					printf("  E%iM%i = %i\n", ep + 1, map + 1, mus);
+				}
+			}
+		}
+		srand(NULL);
+	}
 
         if (ap_progressive_locations.empty())
         {

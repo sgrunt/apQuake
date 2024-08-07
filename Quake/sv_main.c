@@ -1402,6 +1402,23 @@ Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
 */
+ap_level_index_t get_level_for_map_name(const char *mapname) {
+	int ep = -1;
+	int map = -1;
+	if (!strncmp(mapname, "end", 4)) {
+		ep = 5;
+		map = 1;
+	} else if (mapname[0] == 'e'
+	           && mapname[1] >= '0' && mapname[1] <= '9'
+		   && mapname[2] == 'm'
+		   && mapname[3] >= '0' && mapname[3] <= '9') {
+		ep = mapname[1] - '0';
+		map = mapname[3] - '0';
+	}
+
+	return ap_make_level_index(ep, map);
+}
+
 void SV_SendServerinfo (client_t *client)
 {
 	const char **s;
@@ -1567,10 +1584,15 @@ retry:
 	client->signon_sounds = i;
 	// johnfitz
 
+	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
+
 	// send music
 	MSG_WriteByte (&client->message, svc_cdtrack);
-	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
-	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+//	[AP] use shuffled music
+//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+	MSG_WriteByte (&client->message, level_state->music);
+	MSG_WriteByte (&client->message, level_state->music);
 
 	// set view
 	MSG_WriteByte (&client->message, svc_setview);
@@ -1667,22 +1689,6 @@ Initializes a client_t for a new net connection.  This will only be called
 once for a player each game, not once for each level change.
 ================
 */
-ap_level_index_t get_level_for_map_name(const char *mapname) {
-	int ep = -1;
-	int map = -1;
-	if (!strncmp(mapname, "end", 4)) {
-		ep = 5;
-		map = 1;
-	} else if (mapname[0] == 'e'
-	           && mapname[1] >= '0' && mapname[1] <= '9'
-		   && mapname[2] == 'm'
-		   && mapname[3] >= '0' && mapname[3] <= '9') {
-		ep = mapname[1] - '0';
-		map = mapname[3] - '0';
-	}
-
-	return ap_make_level_index(ep, map);
-}
 
 int getApItems() {
     int items = 0;

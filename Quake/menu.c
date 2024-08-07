@@ -36,6 +36,7 @@ static void M_Menu_Ep1_Select_f (void);
 static void M_Menu_Ep2_Select_f (void);
 static void M_Menu_Ep3_Select_f (void);
 static void M_Menu_Ep4_Select_f (void);
+static void M_Menu_Victory_f (void);
 
 static void M_Main_Draw (cb_context_t *cbx);
 static void M_Play_Draw (cb_context_t *cbx);
@@ -47,6 +48,7 @@ static void M_Ep1_Select_Draw (cb_context_t *cbx);
 static void M_Ep2_Select_Draw (cb_context_t *cbx);
 static void M_Ep3_Select_Draw (cb_context_t *cbx);
 static void M_Ep4_Select_Draw (cb_context_t *cbx);
+static void M_Victory_Draw (cb_context_t *cbx);
 
 static void M_Main_Key (int key);
 static void M_Play_Key (int key);
@@ -58,6 +60,7 @@ static void M_Ep1_Select_Key (int key);
 static void M_Ep2_Select_Key (int key);
 static void M_Ep3_Select_Key (int key);
 static void M_Ep4_Select_Key (int key);
+static void M_Victory_Key (int key);
 
 static void M_SelectLevel (const char *level);
 static void M_Kill ();
@@ -2346,6 +2349,46 @@ static void M_Quit_Draw (cb_context_t *cbx) // johnfitz -- modified for new quit
 }
 
 //=============================================================================
+/* Victory screen */ 
+static void M_Menu_Victory_f (void)
+{
+	if (sv.active)
+		return;
+
+	M_MenuChanged ();
+	IN_Deactivate (true);
+	key_dest = key_menu;
+	m_state = m_victory;
+	m_entersound = true;
+	cl.cdtrack = 3;
+	cl.looptrack = 3;
+	BGM_PlayCDtrack ((byte)cl.cdtrack, true);
+}
+
+void SCR_DrawCenterString (cb_context_t *cbx);
+
+static void M_Victory_Draw (cb_context_t *cbx)
+{
+	qpic_t *pic;
+        pic = Draw_CachePic ("gfx/finale.lmp");
+        Draw_Pic (cbx, (320 - pic->width) / 2, 16, pic, 1.0f, false);
+	SCR_CenterPrint("\nCongratulations and well done! You have\nbeaten the seed, and its hundreds of\nchecks and locations. You have proven\nthat your skill and your cunning are\ngreater than all the powers of Quake.\nYou are the master now. We salute you.");
+	SCR_DrawCenterString(cbx);
+}
+
+static void M_Victory_Key (int key)
+{
+	switch (key)
+	{
+	case K_MOUSE2:
+	case K_ESCAPE:
+	case K_BBUTTON:
+		M_Menu_Play_f ();
+		break;
+	}
+}
+
+//=============================================================================
 /* Credits menu -- used by the 2021 re-release */
 
 static void M_Menu_Credits_f (void) {}
@@ -2367,6 +2410,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
 	Cmd_AddCommand ("help", M_Menu_Help_f);
+	Cmd_AddCommand ("menu_victory", M_Menu_Victory_f);
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
 	Cmd_AddCommand ("menu_credits", M_Menu_Credits_f); // needed by the 2021 re-release
 }
@@ -2492,6 +2536,10 @@ void M_Draw (cb_context_t *cbx)
 		M_Ep4_Select_Draw (cbx);
 		break;
 
+	case m_victory:
+		M_Victory_Draw (cbx);
+		break;
+
 	case m_quit:
 		if (!fitzmode)
 		{ /* QuakeSpasm customization: */
@@ -2571,6 +2619,10 @@ void M_Keydown (int key)
 
 	case m_ep4_select:
 		M_Ep4_Select_Key (key);
+		return;
+
+	case m_victory:
+		M_Victory_Key (key);
 		return;
 
 	case m_quit:

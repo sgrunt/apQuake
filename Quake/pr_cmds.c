@@ -1749,7 +1749,15 @@ PF_completelevel
 */
 static void PF_sv_completelevel (void)
 {
+	int was_victorious = ap_state.victory;
 	apquake_complete_level(get_level_for_map_name(sv.name));
+	apquake_check_victory();
+	if (!was_victorious && ap_state.victory)
+	{
+		G_FLOAT (OFS_RETURN) = 1;
+	} else {
+		G_FLOAT (OFS_RETURN) = 0;
+	}
 }
 
 static void PF_cl_sound (void)

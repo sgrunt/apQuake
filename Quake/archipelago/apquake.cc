@@ -995,3 +995,31 @@ void apquake_update()
 		}
 	}
 }
+
+void apquake_check_victory() {
+	if (ap_state.victory) return;
+
+	if (ap_state.goal == 1)
+	{
+		if (!ap_get_level_state(ap_level_index_t{5, 1})->completed) return;
+	}
+	else
+	{
+		// All levels
+		for (int ep = 0; ep < ap_episode_count; ++ep)
+		{
+			if (!ap_state.episodes[ep]) continue;
+
+			int map_count = ap_get_map_count(ep + 1);
+			for (int map = 0; map < map_count; ++map)
+			{
+				if (!ap_get_level_state(ap_level_index_t{ep, map})->completed) return;
+			}
+		}
+	}
+
+	ap_state.victory = 1;
+
+	AP_StoryComplete();
+	ap_settings.victory_callback();
+}

@@ -40,6 +40,7 @@ enum m_state_e
 	m_ep2_select,
 	m_ep3_select,
 	m_ep4_select,
+	m_victory,
 };
 
 extern enum m_state_e m_state;

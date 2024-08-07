@@ -121,6 +121,8 @@ unsigned long long ap_get_rand_seed();
 
 void apquake_update();
 
+void apquake_check_victory();
+
 #ifdef __cplusplus
 }
 #endif

@@ -2350,6 +2350,10 @@ static void M_Quit_Draw (cb_context_t *cbx) // johnfitz -- modified for new quit
 
 //=============================================================================
 /* Victory screen */ 
+
+
+double victory_time = 0.;
+
 static void M_Menu_Victory_f (void)
 {
 	if (sv.active)
@@ -2363,17 +2367,21 @@ static void M_Menu_Victory_f (void)
 	cl.cdtrack = 3;
 	cl.looptrack = 3;
 	BGM_PlayCDtrack ((byte)cl.cdtrack, true);
+	victory_time = realtime;
+	SCR_CenterPrint("\nCongratulations and well done! You have\nbeaten the seed, and its hundreds of\nchecks and locations. You have proven\nthat your skill and your cunning are\ngreater than all the powers of Quake.\nYou are the master now. We salute you.");
 }
 
-void SCR_DrawCenterString (cb_context_t *cbx);
+void SCR_DrawCenterString_Remaining (cb_context_t *cbx, int remaining);
+extern cvar_t scr_printspeed;
 
 static void M_Victory_Draw (cb_context_t *cbx)
 {
 	qpic_t *pic;
+	int remaining;
         pic = Draw_CachePic ("gfx/finale.lmp");
         Draw_Pic (cbx, (320 - pic->width) / 2, 16, pic, 1.0f, false);
-	SCR_CenterPrint("\nCongratulations and well done! You have\nbeaten the seed, and its hundreds of\nchecks and locations. You have proven\nthat your skill and your cunning are\ngreater than all the powers of Quake.\nYou are the master now. We salute you.");
-	SCR_DrawCenterString(cbx);
+	remaining = scr_printspeed.value * (realtime - victory_time);
+	SCR_DrawCenterString_Remaining(cbx, remaining);
 }
 
 static void M_Victory_Key (int key)

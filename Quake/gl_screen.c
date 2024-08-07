@@ -187,21 +187,29 @@ void SCR_CenterPrint (const char *str) // update centerprint data
 	}
 }
 
+void SCR_DrawCenterString_Remaining (cb_context_t *cbx, int remaining);
+
 void SCR_DrawCenterString (cb_context_t *cbx) // actually do the drawing
 {
-	char *start;
-	int	  l;
-	int	  j;
-	int	  x, y;
-	int	  remaining;
-
-	GL_SetCanvas (cbx, CANVAS_MENU); // johnfitz
+	int remaining;
 
 	// the finale prints the characters one at a time
 	if (cl.intermission)
 		remaining = scr_printspeed.value * (cl.time - scr_centertime_start);
 	else
 		remaining = 9999;
+
+	SCR_DrawCenterString_Remaining (cbx, remaining);
+}
+
+void SCR_DrawCenterString_Remaining (cb_context_t *cbx, int remaining)
+{
+	char *start;
+	int	  l;
+	int	  j;
+	int	  x, y;
+
+	GL_SetCanvas (cbx, CANVAS_MENU); // johnfitz
 
 	scr_erase_center = 0;
 	start = scr_centerstring;

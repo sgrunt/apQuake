@@ -545,10 +545,10 @@ void setApItems(int items, int armortype) {
 
     ap_state.player_state.armor_type = armortype;
 
-    ap_state.player_state.powers[6] = !!(svs.serverflags & 1);
-    ap_state.player_state.powers[7] = !!(svs.serverflags & 2);
-    ap_state.player_state.powers[8] = !!(svs.serverflags & 4);
-    ap_state.player_state.powers[9] = !!(svs.serverflags & 8);
+    ap_state.player_state.powers[5] = !!(svs.serverflags & 1);
+    ap_state.player_state.powers[6] = !!(svs.serverflags & 2);
+    ap_state.player_state.powers[7] = !!(svs.serverflags & 4);
+    ap_state.player_state.powers[8] = !!(svs.serverflags & 8);
 }
 
 void setApItemsFromParms (void)

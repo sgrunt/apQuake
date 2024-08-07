@@ -1091,7 +1091,8 @@ void ED_LoadFromFile (const char *data)
 			(current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)))
 		{
 			if ((((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
-			    || strncmp(PR_GetString(ent->v.classname), "item_", 5)) {
+			    || (strncmp(PR_GetString(ent->v.classname), "item_", 5)
+			    	&& strncmp(PR_GetString(ent->v.classname), "weapon_", 7))) {
 			ED_Free (ent);
 			inhibit++;
 			continue;

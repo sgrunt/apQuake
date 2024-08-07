@@ -1450,10 +1450,10 @@ void Host_Loadgame_f (const char *savename)
 				}
 				else if (!strcmp (com_token, "sv.serverflags") || !strcmp (com_token, "svs.serverflags"))
 				{
-					int fl;
+					//int fl;
 					ext = COM_Parse (ext);
-					fl = atoi (com_token);
-					svs.serverflags = fl;
+					//fl = atoi (com_token);
+					svs.serverflags = getServerFlags();
 				}
 				else if (!strcmp (com_token, "spawnparm"))
 				{

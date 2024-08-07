@@ -1130,7 +1130,7 @@ int SV_Precache_Sound (const char *s)
 		{
 			if (sv.state != ss_loading) // spike -- moved this so that there's no actual error any more.
 			{
-				Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
+				//Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
 				// let existing clients know about it
 				MSG_WriteByte (&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort (&sv.reliable_datagram, i | 0x8000);
@@ -1141,8 +1141,8 @@ int SV_Precache_Sound (const char *s)
 		}
 		if (!strcmp (sv.sound_precache[i], s))
 		{
-			if (sv.state != ss_loading)
-				Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
+//			if (sv.state != ss_loading)
+				//Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return i;
 		}
 	}
@@ -1201,7 +1201,7 @@ static void PF_sv_precache_model (void)
 		{
 			if (sv.state != ss_loading)
 			{
-				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
+				//Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
 				// let existing clients know about it
 				MSG_WriteByte (&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort (&sv.reliable_datagram, i | 0x8000);
@@ -1214,8 +1214,8 @@ static void PF_sv_precache_model (void)
 		}
 		if (!strcmp (sv.model_precache[i], s))
 		{
-			if (sv.state != ss_loading && !pr_checkextension.value)
-				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
+//			if (sv.state != ss_loading && !pr_checkextension.value)
+//				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return;
 		}
 	}

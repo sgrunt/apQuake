@@ -774,6 +774,10 @@ static const char *M_GetLevelDescription (int ep, int map)
 		else
 			key2 = '\x0f';
 	}
+	if (key1 == ' ' && key2 != ' ') {
+		key1 = key2;
+		key2 = ' ';
+	}
 	q_snprintf(level_description, 128, "%c %s (%d/%d) %c%c",
 		lockstate,
 		levels[episodes[ep].firstLevel + map - 1].description,

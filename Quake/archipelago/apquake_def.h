@@ -547,7 +547,7 @@ const std::map<int64_t, ap_item_t> ap_quake_item_table = {
 	{720108, {"item_armorInv", 0, -1, -1}},
 	{720109, {"item_health", 2, -1, -1}},
 	{720110, {"item_artifact_invisibility", 0, -1, -1}},
-	{720111, {"item_artifact_invincibility", 0, -1, -1}},
+	{720111, {"item_artifact_invulnerability", 0, -1, -1}},
 	{720112, {"item_artifact_super_damage", 0, -1, -1}},
 	{720113, {"item_health", 0, -1, -1}},
 	{720114, {"item_shells", 1, -1, -1}},

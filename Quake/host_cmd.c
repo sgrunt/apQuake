@@ -1550,6 +1550,7 @@ void Host_Loadgame_f (const char *savename)
 	svs.clients->spawn_parms[11] = ap_state.player_state.powers[3];
 	svs.clients->spawn_parms[12] = ap_state.player_state.powers[4];
 
+	((globalvars_t *)qcvm->globals)->serverflags = getServerFlags();
 	((globalvars_t *)qcvm->globals)->parm1 = getApItems();
 	((globalvars_t *)qcvm->globals)->parm2 = ap_state.player_state.health;
 	((globalvars_t *)qcvm->globals)->parm3 = ap_state.player_state.armor_points;

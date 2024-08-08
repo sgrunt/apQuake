@@ -1076,8 +1076,23 @@ void ap_message_callback (const char* message) {
 void Host_Send_Ap_Item (const char *classname, int spawnflags);
 
 void ap_give_item_callback (const char* classname, int spawnflags, int ep, int map) {
+	if (!strncmp(classname, "item_sigil", 11)) {
+		svs.serverflags |= spawnflags;
+		if (spawnflags & 1)
+			ap_state.player_state.powers[5] = 1;
+		if (spawnflags & 2)
+			ap_state.player_state.powers[6] = 1;
+		if (spawnflags & 4)
+			ap_state.player_state.powers[7] = 1;
+		if (spawnflags & 8)
+			ap_state.player_state.powers[8] = 1;
+
+		if ((svs.serverflags & 15) == 15) {
+		        ap_level_state_t* level_state = ap_get_level_state(ap_make_level_index(5, 1));
+			level_state->unlocked = true;
+		}
 	// level-specific item, probably a key
-	if (ep > 0 && map > 0) {
+	} else if (ep > 0 && map > 0) {
 		char mapname[9];
 		if (ep == 5) {
 			q_strlcpy(mapname, "end", 9);

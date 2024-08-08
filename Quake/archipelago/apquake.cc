@@ -99,7 +99,7 @@ int validate_quake_location(ap_level_index_t idx, int index)
 {
     auto& location_table = get_location_table();
     if (idx.ep < 0 || idx.ep >= (int)location_table.size()) return 0;
-    if (idx.map < 0 || idx.map >= (int)location_table[idx.ep].size()) return 0;
+    if (idx.map < 0 || idx.map >= (int)location_table[idx.ep + 1].size()) return 0;
     auto location_for_level = location_table[idx.ep + 1][idx.map + 1];
     return location_for_level.count(index);
 }

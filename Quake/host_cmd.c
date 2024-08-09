@@ -1673,19 +1673,19 @@ static void Host_Say (qboolean teamonly)
 		if (cls.state != ca_dedicated)
 		{
 
-			q_snprintf (text, sizeof(text), "%s", p);
+			q_snprintf (text, sizeof (text), "%s", p);
 			if (quoted)
-				text[strlen(text) - 1] = '\0';
+				text[strlen (text) - 1] = '\0';
 
 			apquake_send_message (text);
 
-			//Cmd_ForwardToServer ();
+			// Cmd_ForwardToServer ();
 			return;
 		}
 		fromServer = true;
 		teamonly = false;
 	}
-		
+
 	// turn on color set 1
 	if (!fromServer)
 		q_snprintf (text, sizeof (text), "\001%s: %s", save->name, p);

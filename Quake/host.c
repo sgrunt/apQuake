@@ -1252,6 +1252,8 @@ void Host_Init (void)
 		if (!sv.active)
 			Cbuf_AddText ("map start\n");
 	}
+
+	Cvar_Set ("_cl_name", com_argv[COM_CheckParm ("-applayer") + 1]);
 }
 
 /*

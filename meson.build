@@ -1,4 +1,4 @@
-project('vkquake', 'c', 'cpp', default_options : ['c_std=gnu11', 'buildtype=release'])
+project('apquake', 'c', 'cpp', default_options : ['c_std=gnu11', 'buildtype=release'])
 
 shaders = [
     'Shaders/alias.frag',
@@ -231,4 +231,4 @@ incdirs = [
     'Quake/archipelago',
 ]
 
-executable('vkquake', [srcs, shaders_c], dependencies : deps, include_directories : incdirs, c_args : cflags, c_pch: ['Quake/quakedef.h', 'Quake/quakedef.c'])
+executable('apquake', [srcs, shaders_c], dependencies : deps, include_directories : incdirs, c_args : cflags, c_pch: ['Quake/quakedef.h', 'Quake/quakedef.c'])

@@ -866,10 +866,10 @@ static void CL_LoadCSProgs (void)
 			SV_ClearWorld ();
 			if (qcvm->extfuncs.CSQC_Init)
 			{
-				int maj = (int)VKQUAKE_VERSION;
-				int min = (VKQUAKE_VERSION - maj) * 100;
+				int maj = (int)APQUAKE_VERSION;
+				int min = (APQUAKE_VERSION - maj) * 100;
 				G_FLOAT (OFS_PARM0) = false;
-				G_INT (OFS_PARM1) = PR_SetEngineString ("vkQuake");
+				G_INT (OFS_PARM1) = PR_SetEngineString ("apQuake");
 				G_FLOAT (OFS_PARM2) = 10000 * maj + 100 * (min) + VKQUAKE_VER_PATCH;
 				PR_ExecuteProgram (qcvm->extfuncs.CSQC_Init);
 			}

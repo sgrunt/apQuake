@@ -2387,7 +2387,7 @@ void COM_InitFilesystem (void) // johnfitz -- modified based on topaz's tutorial
 		COM_AddGameDirectory (GAMENAME);
 	}
 
-	COM_AddGameDirectory ("apquake");
+	COM_AddGameDirectory ("ap");
 
 	/* this is the end of our base searchpath:
 	 * any set gamedirs, such as those from -game command line

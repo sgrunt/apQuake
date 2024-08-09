@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define APQUAKE_VERSION	  0.0
 #define APQUAKE_VER_PATCH 1 // helper to print a string like 0.92.1
 #ifndef APKQUAKE_VER_SUFFIX
-#define APQUAKE_VER_SUFFIX "" // optional version suffix like -beta1
+#define APQUAKE_VER_SUFFIX "-20240809" // optional version suffix like -beta1
 #endif
 
 #define QS_STRINGIFY_(x) #x

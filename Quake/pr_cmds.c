@@ -487,16 +487,28 @@ ap_level_index_t get_level_for_map_name(const char *mapname);
 static void PF_is_ap_location_checked (void)
 {
 	int index, j, lenj, ret;
-	index = (int) (G_FLOAT (OFS_PARM0));
-	ret = 0;
+	ap_level_index_t level_index;
 
-	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
-	for (j = 0, lenj = level_state->check_count; j < lenj; ++j)
-	{
-		if (level_state->checks[j] == index)
+	index = (int) (G_FLOAT (OFS_PARM0));
+	level_index = get_level_for_map_name(sv.name);
+
+	// Consider AP items checked if they're not valid locations.
+	// This causes progs to despawn if there isn't another effect
+	// of picking up the item and the location is invalid
+	// (Ziggurat Vertigo quad; Tower of Despair mock items).
+	if (!validate_quake_location(level_index, index)) {
+		ret = 1;
+	} else {
+		ret = 0;
+
+		ap_level_state_t* level_state = ap_get_level_state(level_index);
+		for (j = 0, lenj = level_state->check_count; j < lenj; ++j)
 		{
-			ret = 1;
-			break;
+			if (level_state->checks[j] == index)
+			{
+				ret = 1;
+				break;
+			}
 		}
 	}
 

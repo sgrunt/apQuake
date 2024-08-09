@@ -10,7 +10,7 @@ DEBUG ?= 0
 
 CHECK_GCC = $(shell if echo | $(CC) $(1) -Werror -S -o /dev/null -xc - > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi;)
 
-CFLAGS += -MMD -Wall -Wno-trigraphs -Werror -std=gnu11
+CFLAGS += -MMD -Wall -Wno-trigraphs -Werror -std=gnu11 -DUSE_SDL_MALLOC
 CFLAGS += -D_FILE_OFFSET_BITS=64 
 CFLAGS += $(CPUFLAGS)
 CFLAGS += -Iarchipelago
@@ -32,14 +32,12 @@ endef
 endif
 
 
-CXXFLAGS += -MMD -Wall -Wno-trigraphs -Werror
+CXXFLAGS += -MMD -Wall -Wno-trigraphs -Werror -DUSE_SDL_MALLOC
 CXXFLAGS += -D_FILE_OFFSET_BITS=64 
 CXXFLAGS += $(CPUFLAGS)
 CXXFLAGS += -Iarchipelago
 ifneq ($(DEBUG),0)
-DFLAGS += -D_DEBUG
 CXXFLAGS += -g
-DO_STRIP=
 else
 DFLAGS += -DNDEBUG
 CXXFLAGS += -O3 -flto

@@ -12,6 +12,10 @@
 
 #include "Archipelago.h"
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 ap_state_t ap_state;
 int ap_is_in_game = 0;
 
@@ -257,7 +261,11 @@ int apquake_init(ap_settings_t* settings) {
                                         AP_MakeDirectory(ap_save_dir_name.c_str());
                                 }
 #endif
+#ifdef WIN32
+				if (mkdir(ap_save_dir_name.c_str()) == -1) {
+#else
 				if (mkdir(ap_save_dir_name.c_str(), 0755) == -1) {
+#endif
 				    if (errno != EEXIST) {
 				        return 0;
 				    }

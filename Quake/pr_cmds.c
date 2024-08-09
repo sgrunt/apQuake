@@ -482,26 +482,29 @@ static void PF_vectoyaw (void)
 	G_FLOAT (OFS_RETURN) = yaw;
 }
 
-ap_level_index_t get_level_for_map_name(const char *mapname);
+ap_level_index_t get_level_for_map_name (const char *mapname);
 
 static void PF_is_ap_location_checked (void)
 {
-	int index, j, lenj, ret;
+	int				 index, j, lenj, ret;
 	ap_level_index_t level_index;
 
-	index = (int) (G_FLOAT (OFS_PARM0));
-	level_index = get_level_for_map_name(sv.name);
+	index = (int)(G_FLOAT (OFS_PARM0));
+	level_index = get_level_for_map_name (sv.name);
 
 	// Consider AP items checked if they're not valid locations.
 	// This causes progs to despawn if there isn't another effect
 	// of picking up the item and the location is invalid
 	// (Ziggurat Vertigo quad; Tower of Despair mock items).
-	if (!validate_quake_location(level_index, index)) {
+	if (!validate_quake_location (level_index, index))
+	{
 		ret = 1;
-	} else {
+	}
+	else
+	{
 		ret = 0;
 
-		ap_level_state_t* level_state = ap_get_level_state(level_index);
+		ap_level_state_t *level_state = ap_get_level_state (level_index);
 		for (j = 0, lenj = level_state->check_count; j < lenj; ++j)
 		{
 			if (level_state->checks[j] == index)
@@ -1142,8 +1145,8 @@ int SV_Precache_Sound (const char *s)
 		{
 			if (sv.state != ss_loading) // spike -- moved this so that there's no actual error any more.
 			{
-				//Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
-				// let existing clients know about it
+				// Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
+				//  let existing clients know about it
 				MSG_WriteByte (&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort (&sv.reliable_datagram, i | 0x8000);
 				MSG_WriteString (&sv.reliable_datagram, s);
@@ -1153,8 +1156,8 @@ int SV_Precache_Sound (const char *s)
 		}
 		if (!strcmp (sv.sound_precache[i], s))
 		{
-//			if (sv.state != ss_loading)
-				//Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
+			//			if (sv.state != ss_loading)
+			// Con_Warning ("PF_precache_sound(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return i;
 		}
 	}
@@ -1213,8 +1216,8 @@ static void PF_sv_precache_model (void)
 		{
 			if (sv.state != ss_loading)
 			{
-				//Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
-				// let existing clients know about it
+				// Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
+				//  let existing clients know about it
 				MSG_WriteByte (&sv.reliable_datagram, svcdp_precache);
 				MSG_WriteShort (&sv.reliable_datagram, i | 0x8000);
 				MSG_WriteString (&sv.reliable_datagram, s);
@@ -1226,8 +1229,8 @@ static void PF_sv_precache_model (void)
 		}
 		if (!strcmp (sv.model_precache[i], s))
 		{
-//			if (sv.state != ss_loading && !pr_checkextension.value)
-//				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
+			//			if (sv.state != ss_loading && !pr_checkextension.value)
+			//				Con_Warning ("PF_precache_model(\"%s\"): Precache should only be done in spawn functions\n", s);
 			return;
 		}
 	}
@@ -1401,8 +1404,8 @@ static void PF_ceil (void)
 static void PF_is_major_ap_item (void)
 {
 	int index;
-	index = (int) (G_FLOAT (OFS_PARM0));
-	G_FLOAT (OFS_RETURN) = apquake_is_location_progression(get_level_for_map_name(sv.name), index);
+	index = (int)(G_FLOAT (OFS_PARM0));
+	G_FLOAT (OFS_RETURN) = apquake_is_location_progression (get_level_for_map_name (sv.name), index);
 }
 
 /*
@@ -1436,9 +1439,9 @@ static void PF_pointcontents (void)
 static void PF_send_ap_check (void)
 {
 	int id;
-	id = (int) (G_FLOAT (OFS_PARM0));
+	id = (int)(G_FLOAT (OFS_PARM0));
 
-	apquake_check_location(get_level_for_map_name(sv.name), id);
+	apquake_check_location (get_level_for_map_name (sv.name), id);
 }
 
 /*
@@ -1762,12 +1765,14 @@ PF_completelevel
 static void PF_sv_completelevel (void)
 {
 	int was_victorious = ap_state.victory;
-	apquake_complete_level(get_level_for_map_name(sv.name));
-	apquake_check_victory();
+	apquake_complete_level (get_level_for_map_name (sv.name));
+	apquake_check_victory ();
 	if (!was_victorious && ap_state.victory)
 	{
 		G_FLOAT (OFS_RETURN) = 1;
-	} else {
+	}
+	else
+	{
 		G_FLOAT (OFS_RETURN) = 0;
 	}
 }

@@ -528,32 +528,40 @@ This only happens at the end of a game, not between levels
 ==================
 */
 
-void setApItems(int items, int armortype) {
-    if (items & IT_AXE) {
-        ap_state.player_state.weapon_owned[0] = 1;
-    } else {
-        ap_state.player_state.weapon_owned[0] = 0;
-    }
-
-    for (int i = 0; i < 7; i++) {
-        if (items & (1 << i)) {
-            ap_state.player_state.weapon_owned[i + 1] = 1;
-	} else {
-            ap_state.player_state.weapon_owned[i + 1] = 0;
+void setApItems (int items, int armortype)
+{
+	if (items & IT_AXE)
+	{
+		ap_state.player_state.weapon_owned[0] = 1;
 	}
-    }
+	else
+	{
+		ap_state.player_state.weapon_owned[0] = 0;
+	}
 
-    ap_state.player_state.armor_type = armortype;
+	for (int i = 0; i < 7; i++)
+	{
+		if (items & (1 << i))
+		{
+			ap_state.player_state.weapon_owned[i + 1] = 1;
+		}
+		else
+		{
+			ap_state.player_state.weapon_owned[i + 1] = 0;
+		}
+	}
 
-    ap_state.player_state.powers[5] = !!(svs.serverflags & 1);
-    ap_state.player_state.powers[6] = !!(svs.serverflags & 2);
-    ap_state.player_state.powers[7] = !!(svs.serverflags & 4);
-    ap_state.player_state.powers[8] = !!(svs.serverflags & 8);
+	ap_state.player_state.armor_type = armortype;
+
+	ap_state.player_state.powers[5] = !!(svs.serverflags & 1);
+	ap_state.player_state.powers[6] = !!(svs.serverflags & 2);
+	ap_state.player_state.powers[7] = !!(svs.serverflags & 4);
+	ap_state.player_state.powers[8] = !!(svs.serverflags & 8);
 }
 
 void setApItemsFromParms (void)
 {
-	setApItems(pr_global_struct->parm1, pr_global_struct->parm9);
+	setApItems (pr_global_struct->parm1, pr_global_struct->parm9);
 	ap_state.player_state.health = pr_global_struct->parm2;
 	ap_state.player_state.armor_points = pr_global_struct->parm3;
 	ap_state.player_state.ammo[0] = pr_global_struct->parm4;
@@ -562,11 +570,11 @@ void setApItemsFromParms (void)
 	ap_state.player_state.ammo[3] = pr_global_struct->parm7;
 	ap_state.player_state.ready_weapon = pr_global_struct->parm8;
 	ap_state.player_state.armor_type = pr_global_struct->parm9;
-	ap_state.player_state.powers[0] = q_max(pr_global_struct->parm14, 0.);
-	ap_state.player_state.powers[1] = q_max(pr_global_struct->parm10, 0.);
-	ap_state.player_state.powers[2] = q_max(pr_global_struct->parm11, 0.);
-	ap_state.player_state.powers[3] = q_max(pr_global_struct->parm12, 0.);
-	ap_state.player_state.powers[4] = q_max(pr_global_struct->parm13, 0.);
+	ap_state.player_state.powers[0] = q_max (pr_global_struct->parm14, 0.);
+	ap_state.player_state.powers[1] = q_max (pr_global_struct->parm10, 0.);
+	ap_state.player_state.powers[2] = q_max (pr_global_struct->parm11, 0.);
+	ap_state.player_state.powers[3] = q_max (pr_global_struct->parm12, 0.);
+	ap_state.player_state.powers[4] = q_max (pr_global_struct->parm13, 0.);
 }
 
 void Host_ShutdownServer (qboolean crash)
@@ -583,10 +591,10 @@ void Host_ShutdownServer (qboolean crash)
 	PR_SwitchQCVM (&sv.qcvm);
 
 	pr_global_struct->self = EDICT_TO_PROG (svs.clients->edict);
-	dfunction_t* fnc = ED_FindFunction("SetChangeParms_MidLevel");
+	dfunction_t *fnc = ED_FindFunction ("SetChangeParms_MidLevel");
 	PR_ExecuteProgram (fnc - qcvm->functions);
 	setApItemsFromParms ();
-	PR_SwitchQCVM(NULL);
+	PR_SwitchQCVM (NULL);
 
 	ap_is_in_game = 0;
 	sv.active = false;
@@ -901,7 +909,7 @@ void _Host_Frame (double time)
 	if (host_speeds.value)
 		time3 = Sys_DoubleTime ();
 
-	apquake_update();
+	apquake_update ();
 
 	if (!isDedicated)
 	{
@@ -1060,23 +1068,26 @@ static void Tests_Init ()
 #endif
 }
 
-void SetApCvars()
+void SetApCvars ()
 {
-	Cvar_SetValueROM("ap_rand_seed", ap_get_rand_seed());
-	Cvar_SetValueROM("ap_random_items", ap_state.random_items);
-	Cvar_SetValueROM("ap_random_monsters", ap_state.random_monsters);
-	Cvar_SetValueROM("ap_reset_level_on_death", ap_state.reset_level_on_death);
+	Cvar_SetValueROM ("ap_rand_seed", ap_get_rand_seed ());
+	Cvar_SetValueROM ("ap_random_items", ap_state.random_items);
+	Cvar_SetValueROM ("ap_random_monsters", ap_state.random_monsters);
+	Cvar_SetValueROM ("ap_reset_level_on_death", ap_state.reset_level_on_death);
 }
 
-void ap_message_callback (const char* message) {
-	S_LocalSound("misc/talk.wav");
-	Con_SafePrintf("%s\n", message);
+void ap_message_callback (const char *message)
+{
+	S_LocalSound ("misc/talk.wav");
+	Con_SafePrintf ("%s\n", message);
 }
 
 void Host_Send_Ap_Item (const char *classname, int spawnflags);
 
-void ap_give_item_callback (const char* classname, int spawnflags, int ep, int map) {
-	if (!strncmp(classname, "item_sigil", 11)) {
+void ap_give_item_callback (const char *classname, int spawnflags, int ep, int map)
+{
+	if (!strncmp (classname, "item_sigil", 11))
+	{
 		svs.serverflags |= spawnflags;
 		if (spawnflags & 1)
 			ap_state.player_state.powers[5] = 1;
@@ -1087,55 +1098,60 @@ void ap_give_item_callback (const char* classname, int spawnflags, int ep, int m
 		if (spawnflags & 8)
 			ap_state.player_state.powers[8] = 1;
 
-		if ((svs.serverflags & 15) == 15) {
-		        ap_level_state_t* level_state = ap_get_level_state(ap_make_level_index(5, 1));
+		if ((svs.serverflags & 15) == 15)
+		{
+			ap_level_state_t *level_state = ap_get_level_state (ap_make_level_index (5, 1));
 			level_state->unlocked = true;
 		}
-	// level-specific item, probably a key
-	} else if (ep > 0 && map > 0) {
+		// level-specific item, probably a key
+	}
+	else if (ep > 0 && map > 0)
+	{
 		char mapname[9];
-		if (ep == 5) {
-			q_strlcpy(mapname, "end", 9);
-		} else {
-			q_snprintf(mapname, 9, "e%dm%d", ep, map);
+		if (ep == 5)
+		{
+			q_strlcpy (mapname, "end", 9);
 		}
-		if (strncmp(sv.name, mapname, 9))
+		else
+		{
+			q_snprintf (mapname, 9, "e%dm%d", ep, map);
+		}
+		if (strncmp (sv.name, mapname, 9))
 			return; // not for this level
 	}
 	Host_Send_Ap_Item (classname, spawnflags);
 }
 
-void ap_victory_callback (void) {
-}
+void ap_victory_callback (void) {}
 
 void APQuake_Init (void)
 {
-	int i;
+	int			  i;
 	ap_settings_t ap_settings;
 
-	memset(&ap_settings, 0, sizeof(ap_settings_t));
+	memset (&ap_settings, 0, sizeof (ap_settings_t));
 
-	i = COM_CheckParm("-apgame");
+	i = COM_CheckParm ("-apgame");
 	if (i && i < com_argc - 1)
-		ap_settings.game = q_strdup(com_argv[i + 1]);
+		ap_settings.game = q_strdup (com_argv[i + 1]);
 	else
 		ap_settings.game = "Quake";
 
-	i = COM_CheckParm("-applayer");
+	i = COM_CheckParm ("-applayer");
 	if (i && i < com_argc - 1)
-		ap_settings.player_name = q_strdup(com_argv[i + 1]);
+		ap_settings.player_name = q_strdup (com_argv[i + 1]);
 	else
-		Sys_Error("The -applayer parameter is required.");
+		Sys_Error ("The -applayer parameter is required.");
 
-	i = COM_CheckParm("-apserver");
+	i = COM_CheckParm ("-apserver");
 	if (i && i < com_argc - 1)
-		ap_settings.ip = q_strdup(com_argv[i + 1]);
+		ap_settings.ip = q_strdup (com_argv[i + 1]);
 	else
-		Sys_Error("The -apserver parameter is required.");
+		Sys_Error ("The -apserver parameter is required.");
 
-	i = COM_CheckParm("-appassword");
+	i = COM_CheckParm ("-appassword");
 	if (i && i < com_argc - 1)
-		ap_settings.passwd = q_strdup(com_argv[i + 1]);
+		ap_settings.passwd = q_strdup (com_argv[i + 1]);
 	else
 		ap_settings.passwd = "";
 
@@ -1143,8 +1159,9 @@ void APQuake_Init (void)
 	ap_settings.give_item_callback = &ap_give_item_callback;
 	ap_settings.victory_callback = &ap_victory_callback;
 
-	if (!apquake_init(&ap_settings)) {
-	    Sys_Error ("Failed to initialize Archipelago.");
+	if (!apquake_init (&ap_settings))
+	{
+		Sys_Error ("Failed to initialize Archipelago.");
 	}
 }
 

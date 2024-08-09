@@ -51,9 +51,10 @@ void Host_Quit_f (void)
 		return;
 	}
 
-	if (sv.active) {
-		apquake_save_state();
-		Host_Savegame_f();
+	if (sv.active)
+	{
+		apquake_save_state ();
+		Host_Savegame_f ();
 	}
 
 	CL_Disconnect ();
@@ -798,21 +799,26 @@ command from the console.  Active clients are kicked off.
 ======================
 */
 
-int getServerFlags() {
-    int ret = 0;
-    if (ap_state.player_state.powers[5] > 0) {
-        ret |= 1;
-    }
-    if (ap_state.player_state.powers[6] > 0) {
-        ret |= 2;
-    }
-    if (ap_state.player_state.powers[7] > 0) {
-        ret |= 4;
-    }
-    if (ap_state.player_state.powers[8] > 0) {
-        ret |= 8;
-    }
-    return ret;
+int getServerFlags ()
+{
+	int ret = 0;
+	if (ap_state.player_state.powers[5] > 0)
+	{
+		ret |= 1;
+	}
+	if (ap_state.player_state.powers[6] > 0)
+	{
+		ret |= 2;
+	}
+	if (ap_state.player_state.powers[7] > 0)
+	{
+		ret |= 4;
+	}
+	if (ap_state.player_state.powers[8] > 0)
+	{
+		ret |= 8;
+	}
+	return ret;
 }
 
 static void Host_Map_f (void)
@@ -853,7 +859,7 @@ static void Host_Map_f (void)
 	key_dest = key_game; // remove console or menu
 	SCR_BeginLoadingPlaque ();
 
-	svs.serverflags = getServerFlags();
+	svs.serverflags = getServerFlags ();
 	q_strlcpy (name, Cmd_Argv (1), sizeof (name));
 	// remove (any) trailing ".bsp" from mapname -- S.A.
 	p = strstr (name, ".bsp");
@@ -1108,7 +1114,7 @@ void Host_Savegame_f ()
 		return;
 	}
 
-	q_snprintf (name, sizeof (name), "%s/%s", apquake_get_seed(), savename);
+	q_snprintf (name, sizeof (name), "%s/%s", apquake_get_seed (), savename);
 
 	COM_AddExtension (name, ".sav", sizeof (name));
 
@@ -1283,7 +1289,7 @@ static void Send_Spawn_Info (client_t *c, qboolean loadgame)
 Host_Loadgame_f
 ===============
 */
-int getApItems();
+int getApItems ();
 
 void Host_Loadgame_f (const char *savename)
 {
@@ -1303,8 +1309,8 @@ void Host_Loadgame_f (const char *savename)
 
 	cls.demonum = -1; // stop demo loop in case this fails
 
-	const char	*save_path = apquake_get_seed(); 
-	qboolean loadable = false;
+	const char *save_path = apquake_get_seed ();
+	qboolean	loadable = false;
 	q_snprintf (name, sizeof (name), "%s/%s", save_path, savename);
 	COM_AddExtension (name, ".sav", sizeof (name));
 
@@ -1450,10 +1456,10 @@ void Host_Loadgame_f (const char *savename)
 				}
 				else if (!strcmp (com_token, "sv.serverflags") || !strcmp (com_token, "svs.serverflags"))
 				{
-					//int fl;
+					// int fl;
 					ext = COM_Parse (ext);
-					//fl = atoi (com_token);
-					svs.serverflags = getServerFlags();
+					// fl = atoi (com_token);
+					svs.serverflags = getServerFlags ();
 				}
 				else if (!strcmp (com_token, "spawnparm"))
 				{
@@ -1536,7 +1542,7 @@ void Host_Loadgame_f (const char *savename)
 	start = NULL;
 
 	// [AP] don't clobber spawnparms on loads
-	svs.clients->spawn_parms[0] = getApItems();
+	svs.clients->spawn_parms[0] = getApItems ();
 	svs.clients->spawn_parms[1] = ap_state.player_state.health;
 	svs.clients->spawn_parms[2] = ap_state.player_state.armor_points;
 	svs.clients->spawn_parms[3] = ap_state.player_state.ammo[0];
@@ -1551,8 +1557,8 @@ void Host_Loadgame_f (const char *savename)
 	svs.clients->spawn_parms[12] = ap_state.player_state.powers[4];
 	svs.clients->spawn_parms[13] = ap_state.player_state.powers[0];
 
-	((globalvars_t *)qcvm->globals)->serverflags = getServerFlags();
-	((globalvars_t *)qcvm->globals)->parm1 = getApItems();
+	((globalvars_t *)qcvm->globals)->serverflags = getServerFlags ();
+	((globalvars_t *)qcvm->globals)->parm1 = getApItems ();
 	((globalvars_t *)qcvm->globals)->parm2 = ap_state.player_state.health;
 	((globalvars_t *)qcvm->globals)->parm3 = ap_state.player_state.armor_points;
 	((globalvars_t *)qcvm->globals)->parm4 = ap_state.player_state.ammo[0];
@@ -1566,12 +1572,15 @@ void Host_Loadgame_f (const char *savename)
 	((globalvars_t *)qcvm->globals)->parm12 = ap_state.player_state.powers[3];
 	((globalvars_t *)qcvm->globals)->parm13 = ap_state.player_state.powers[4];
 	((globalvars_t *)qcvm->globals)->parm14 = ap_state.player_state.powers[0];
-		
+
 	((globalvars_t *)qcvm->globals)->self = EDICT_TO_PROG (svs.clients->edict);
-	if (was_in_level) {
-		dfunction_t* fnc = ED_FindFunction("DecodeLevelParms");
+	if (was_in_level)
+	{
+		dfunction_t *fnc = ED_FindFunction ("DecodeLevelParms");
 		PR_ExecuteProgram (fnc - qcvm->functions);
-	} else {
+	}
+	else
+	{
 		PR_ExecuteProgram (((globalvars_t *)qcvm->globals)->PutClientInServer);
 	}
 
@@ -2554,17 +2563,21 @@ static void Host_Startdemos_f (void)
 	if (!sv.active && cls.demonum != -1 && !cls.demoplayback)
 	{
 		cls.demonum = -1;
-		if (ap_state.map > 0) {
+		if (ap_state.map > 0)
+		{
 			char mapname[9];
-			if (ap_state.ep == 5) {
-				q_snprintf(mapname, 8, "end");
-			} else {
-				q_snprintf(mapname, 8, "e%dm%d",
-					ap_state.ep,
-					ap_state.map);
+			if (ap_state.ep == 5)
+			{
+				q_snprintf (mapname, 8, "end");
 			}
-			Host_Loadgame_f(mapname);
-		} else {
+			else
+			{
+				q_snprintf (mapname, 8, "e%dm%d", ap_state.ep, ap_state.map);
+			}
+			Host_Loadgame_f (mapname);
+		}
+		else
+		{
 			Cbuf_InsertText ("menu_main\n");
 		}
 	}
@@ -2625,19 +2638,20 @@ void Host_Resetdemos (void)
 
 void Host_Send_Ap_Item (const char *classname, int spawnflags)
 {
-	edict_t *ent;
+	edict_t		*ent;
 	dfunction_t *func;
 
 	PR_SwitchQCVM (&sv.qcvm);
-	ent = ED_Alloc();
-	ent->v.classname = PR_SetEngineString(classname);
+	ent = ED_Alloc ();
+	ent->v.classname = PR_SetEngineString (classname);
 	ent->v.spawnflags = spawnflags;
 
 	func = ED_FindFunction (va ("spawnfunc_%s", PR_GetString (ent->v.classname)));
 	if (!func)
 		func = ED_FindFunction (PR_GetString (ent->v.classname));
 
-	if (!func) {
+	if (!func)
+	{
 		Con_SafePrintf ("No spawn function for:\n");
 		ED_Print (ent);
 		ED_Free (ent);
@@ -2648,13 +2662,13 @@ void Host_Send_Ap_Item (const char *classname, int spawnflags)
 	pr_global_struct->self = EDICT_TO_PROG (ent);
 	PR_ExecuteProgram (func - qcvm->functions);
 
-        pr_global_struct->self = EDICT_TO_PROG (ent);
-        pr_global_struct->other = EDICT_TO_PROG (svs.clients->edict);
-        pr_global_struct->time = qcvm->time;
-        PR_ExecuteProgram (ent->v.touch);
+	pr_global_struct->self = EDICT_TO_PROG (ent);
+	pr_global_struct->other = EDICT_TO_PROG (svs.clients->edict);
+	pr_global_struct->time = qcvm->time;
+	PR_ExecuteProgram (ent->v.touch);
 
 	ED_Free (ent);
-	
+
 	PR_SwitchQCVM (NULL);
 }
 

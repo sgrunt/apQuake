@@ -1053,7 +1053,7 @@ void ED_LoadFromFile (const char *data)
 {
 	dfunction_t *func;
 	edict_t		*ent = NULL;
-	int	apindex = -1;
+	int			 apindex = -1;
 	int			 inhibit = 0;
 	int			 usingspawnfunc = 0;
 
@@ -1090,12 +1090,13 @@ void ED_LoadFromFile (const char *data)
 			(current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY)) || (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM)) ||
 			(current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)))
 		{
-			if ((((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) == (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD))
-			    || (strncmp(PR_GetString(ent->v.classname), "item_", 5)
-			    	&& strncmp(PR_GetString(ent->v.classname), "weapon_", 7))) {
-			ED_Free (ent);
-			inhibit++;
-			continue;
+			if ((((int)ent->v.spawnflags & (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) ==
+				 (SPAWNFLAG_NOT_EASY | SPAWNFLAG_NOT_MEDIUM | SPAWNFLAG_NOT_HARD)) ||
+				(strncmp (PR_GetString (ent->v.classname), "item_", 5) && strncmp (PR_GetString (ent->v.classname), "weapon_", 7)))
+			{
+				ED_Free (ent);
+				inhibit++;
+				continue;
 			}
 		}
 
@@ -1141,7 +1142,7 @@ void ED_LoadFromFile (const char *data)
 		if (!val)
 			Sys_Error ("ApIndex field not found?");
 
-		val->_float = (float) apindex;
+		val->_float = (float)apindex;
 	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);

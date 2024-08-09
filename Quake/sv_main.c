@@ -1402,21 +1402,22 @@ Sends the first message from the server to a connected client.
 This will be sent on the initial connection and upon each server load.
 ================
 */
-ap_level_index_t get_level_for_map_name(const char *mapname) {
+ap_level_index_t get_level_for_map_name (const char *mapname)
+{
 	int ep = -1;
 	int map = -1;
-	if (!strncmp(mapname, "end", 4)) {
+	if (!strncmp (mapname, "end", 4))
+	{
 		ep = 5;
 		map = 1;
-	} else if (mapname[0] == 'e'
-	           && mapname[1] >= '0' && mapname[1] <= '9'
-		   && mapname[2] == 'm'
-		   && mapname[3] >= '0' && mapname[3] <= '9') {
+	}
+	else if (mapname[0] == 'e' && mapname[1] >= '0' && mapname[1] <= '9' && mapname[2] == 'm' && mapname[3] >= '0' && mapname[3] <= '9')
+	{
 		ep = mapname[1] - '0';
 		map = mapname[3] - '0';
 	}
 
-	return ap_make_level_index(ep, map);
+	return ap_make_level_index (ep, map);
 }
 
 void SV_SendServerinfo (client_t *client)
@@ -1584,13 +1585,13 @@ retry:
 	client->signon_sounds = i;
 	// johnfitz
 
-	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
+	ap_level_state_t *level_state = ap_get_level_state (get_level_for_map_name (sv.name));
 
 	// send music
 	MSG_WriteByte (&client->message, svc_cdtrack);
-//	[AP] use shuffled music
-//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
-//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+	//	[AP] use shuffled music
+	//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
+	//	MSG_WriteByte (&client->message, qcvm->edicts->v.sounds);
 	MSG_WriteByte (&client->message, level_state->music);
 	MSG_WriteByte (&client->message, level_state->music);
 
@@ -1690,52 +1691,68 @@ once for a player each game, not once for each level change.
 ================
 */
 
-int getApItems() {
-    int items = 0;
-    ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(sv.name));
+int getApItems ()
+{
+	int				  items = 0;
+	ap_level_state_t *level_state = ap_get_level_state (get_level_for_map_name (sv.name));
 
-    if (ap_state.player_state.weapon_owned[0]) {
-        items |= IT_AXE;
-    }
-
-    for (int i = 0; i < 7; i++) {
-        if (ap_state.player_state.weapon_owned[i + 1]) {
-	    items |= 1 << i;
+	if (ap_state.player_state.weapon_owned[0])
+	{
+		items |= IT_AXE;
 	}
-    }
 
-    if (ap_state.player_state.armor_type > 60) {
-    	items |= IT_ARMOR3;
-    } else if (ap_state.player_state.armor_type > 30) {
-    	items |= IT_ARMOR2;
-    } else if (ap_state.player_state.armor_type > 0) {
-        items |= IT_ARMOR1;
-    }
+	for (int i = 0; i < 7; i++)
+	{
+		if (ap_state.player_state.weapon_owned[i + 1])
+		{
+			items |= 1 << i;
+		}
+	}
 
-    if (level_state->keys[0] > 0) {
-	items |= IT_KEY1;
-    }
-    if (level_state->keys[1] > 0) {
-	items |= IT_KEY2;
-    }
+	if (ap_state.player_state.armor_type > 60)
+	{
+		items |= IT_ARMOR3;
+	}
+	else if (ap_state.player_state.armor_type > 30)
+	{
+		items |= IT_ARMOR2;
+	}
+	else if (ap_state.player_state.armor_type > 0)
+	{
+		items |= IT_ARMOR1;
+	}
 
-    if (ap_state.player_state.powers[0] > 0) {
-        items |= IT_SUPERHEALTH;
-    }
-    if (ap_state.player_state.powers[1] > 0) {
-        items |= IT_INVISIBILITY;
-    }
-    if (ap_state.player_state.powers[2] > 0) {
-        items |= IT_INVULNERABILITY;
-    }
-    if (ap_state.player_state.powers[3] > 0) {
-        items |= IT_SUIT;
-    }
-    if (ap_state.player_state.powers[4] > 0) {
-        items |= IT_QUAD;
-    }
+	if (level_state->keys[0] > 0)
+	{
+		items |= IT_KEY1;
+	}
+	if (level_state->keys[1] > 0)
+	{
+		items |= IT_KEY2;
+	}
 
-    return items;
+	if (ap_state.player_state.powers[0] > 0)
+	{
+		items |= IT_SUPERHEALTH;
+	}
+	if (ap_state.player_state.powers[1] > 0)
+	{
+		items |= IT_INVISIBILITY;
+	}
+	if (ap_state.player_state.powers[2] > 0)
+	{
+		items |= IT_INVULNERABILITY;
+	}
+	if (ap_state.player_state.powers[3] > 0)
+	{
+		items |= IT_SUIT;
+	}
+	if (ap_state.player_state.powers[4] > 0)
+	{
+		items |= IT_QUAD;
+	}
+
+	return items;
 }
 
 void SV_ConnectClient (int clientnum)
@@ -1744,7 +1761,7 @@ void SV_ConnectClient (int clientnum)
 	client_t		 *client;
 	int				  edictnum;
 	struct qsocket_s *netconnection;
-	//int				  i;
+	// int				  i;
 	float			  spawn_parms[NUM_TOTAL_SPAWN_PARMS];
 
 	client = svs.clients + clientnum;
@@ -1795,7 +1812,7 @@ void SV_ConnectClient (int clientnum)
 	}
 #endif
 	memset (client->spawn_parms, 0, sizeof (spawn_parms));
-	client->spawn_parms[0] = getApItems();
+	client->spawn_parms[0] = getApItems ();
 	client->spawn_parms[1] = ap_state.player_state.health;
 	client->spawn_parms[2] = ap_state.player_state.armor_points;
 	client->spawn_parms[3] = ap_state.player_state.ammo[0];
@@ -3177,11 +3194,11 @@ void SV_SpawnServer (const char *server)
 	int			i;
 	qcvm_t	   *vm = qcvm;
 
-	ap_level_index_t level_index = get_level_for_map_name(server);
+	ap_level_index_t level_index = get_level_for_map_name (server);
 	ap_state.ep = level_index.ep + 1;
 	ap_state.map = level_index.map + 1;
 
-	Cvar_SetValueROM("ap_rand_seed", (float)((ap_get_rand_seed() + (ap_state.ep * 9) + ap_state.map) % 40000000));
+	Cvar_SetValueROM ("ap_rand_seed", (float)((ap_get_rand_seed () + (ap_state.ep * 9) + ap_state.map) % 40000000));
 
 	// let's not have any servers with no name
 	if (hostname.string[0] == 0)

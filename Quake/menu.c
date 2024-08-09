@@ -636,14 +636,15 @@ void M_Main_Key (int key)
 	}
 }
 
-static void M_Kill () {
+static void M_Kill ()
+{
 	if (!sv.active)
 		return;
 
 	IN_Activate ();
 	key_dest = key_game;
 	m_state = m_none;
-	Cbuf_AddText("kill\n");	
+	Cbuf_AddText ("kill\n");
 }
 
 //=============================================================================
@@ -717,17 +718,21 @@ static int M_Play_NumItems ()
 {
 	int ret = 0;
 	int i;
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 5; i++)
+	{
 		if (ap_state.episodes[i])
 			ret++;
 	}
 	return ret;
 }
 
-static int GetEpForSlot(int slot) {
+static int GetEpForSlot (int slot)
+{
 	int i = 0, tmpslot = 0;
-	for (i = 0; i < 5; i++) {
-		if (ap_state.episodes[i]) {
+	for (i = 0; i < 5; i++)
+	{
+		if (ap_state.episodes[i])
+		{
 			if (tmpslot == slot)
 				return i + 1;
 			tmpslot++;
@@ -750,12 +755,12 @@ static char level_description[128];
 
 static const char *M_GetLevelDescription (int ep, int map)
 {
-	ap_level_index_t lv = ap_make_level_index(ep, map);
-	ap_level_state_t *level_state = ap_get_level_state(lv);
-	ap_level_info_t *level_info = ap_get_level_info(lv);
-	char lockstate = ' ';
-	char key1 = ' ';
-	char key2 = ' ';
+	ap_level_index_t  lv = ap_make_level_index (ep, map);
+	ap_level_state_t *level_state = ap_get_level_state (lv);
+	ap_level_info_t	 *level_info = ap_get_level_info (lv);
+	char			  lockstate = ' ';
+	char			  key1 = ' ';
+	char			  key2 = ' ';
 	if (!level_state->unlocked)
 		lockstate = '\x01'; // M_Print rotates these by 128
 	if (level_state->completed)
@@ -774,43 +779,40 @@ static const char *M_GetLevelDescription (int ep, int map)
 		else
 			key2 = '\x0f';
 	}
-	if (key1 == ' ' && key2 != ' ') {
+	if (key1 == ' ' && key2 != ' ')
+	{
 		key1 = key2;
 		key2 = ' ';
 	}
-	q_snprintf(level_description, 128, "%c %s (%d/%d) %c%c",
-		lockstate,
-		levels[episodes[ep].firstLevel + map - 1].description,
-		level_state->check_count,
-		level_info->check_count,
-		key1,
-		key2);
+	q_snprintf (
+		level_description, 128, "%c %s (%d/%d) %c%c", lockstate, levels[episodes[ep].firstLevel + map - 1].description, level_state->check_count,
+		level_info->check_count, key1, key2);
 	return level_description;
 }
 
 static void M_Play_Draw (cb_context_t *cbx)
 {
-	qpic_t *p;
+	qpic_t	 *p;
 	const int top = MENU_TOP;
 	const int num_items = M_Play_NumItems ();
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
 	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
 	M_DrawPic (cbx, (320 - p->width) / 2, 4, p);
-	//M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/sp_menu.lmp"));
+	// M_DrawTransPic (cbx, 72, 32, Draw_CachePic ("gfx/sp_menu.lmp"));
 
 	for (int i = 0; i < num_items; i++)
 	{
-		int ep = GetEpForSlot(i);
+		int		  ep = GetEpForSlot (i);
 		const int y = top + i * CHARACTER_SIZE;
 		if (ep == 5)
-			M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(5, 1));
+			M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription (5, 1));
 		else
 			M_Print (cbx, MENU_LABEL_X, y, episodes[ep].description);
 	}
 
 	M_Mouse_UpdateListCursor (&m_play_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, num_items, 0);
-	Draw_Character (cbx, MENU_CURSOR_X, top + (m_play_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_play_cursor)*CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
 static void M_Play_Key (int key)
@@ -841,60 +843,64 @@ static void M_Play_Key (int key)
 	case K_ABUTTON:
 		m_entersound = true;
 
-		switch (GetEpForSlot(m_play_cursor))
+		switch (GetEpForSlot (m_play_cursor))
 		{
 		case 1:
-			M_Menu_Ep1_Select_f();
+			M_Menu_Ep1_Select_f ();
 			break;
 
 		case 2:
-			M_Menu_Ep2_Select_f();
+			M_Menu_Ep2_Select_f ();
 			break;
 
 		case 3:
-			M_Menu_Ep3_Select_f();
+			M_Menu_Ep3_Select_f ();
 			break;
 
 		case 4:
-			M_Menu_Ep4_Select_f();
+			M_Menu_Ep4_Select_f ();
 			break;
 
 		case 5:
-			M_SelectLevel("end");
+			M_SelectLevel ("end");
 			break;
 		}
 	}
 }
 
-void Host_Loadgame_f(const char *savename);
-ap_level_index_t get_level_for_map_name(const char *mapname);
+void			 Host_Loadgame_f (const char *savename);
+ap_level_index_t get_level_for_map_name (const char *mapname);
 
-static void M_SelectLevel(const char *level)
+static void M_SelectLevel (const char *level)
 {
-	char filename[260];
-	FILE* file;
+	char  filename[260];
+	FILE *file;
 
-	ap_level_state_t* level_state = ap_get_level_state(get_level_for_map_name(level));
-	if (!level_state->unlocked) {
+	ap_level_state_t *level_state = ap_get_level_state (get_level_for_map_name (level));
+	if (!level_state->unlocked)
+	{
 		m_entersound = false;
-		S_LocalSound("doors/medtry.wav");
+		S_LocalSound ("doors/medtry.wav");
 		return;
 	}
 
-        IN_Activate ();
-        key_dest = key_game;
+	IN_Activate ();
+	key_dest = key_game;
 	Cbuf_AddText ("maxplayers 1\n");
 	Cbuf_AddText ("deathmatch 0\n");
 	Cbuf_AddText ("coop 0\n");
-	Cbuf_AddText ( va ( "skill %d\n", ap_state.skill ) );
+	Cbuf_AddText (va ("skill %d\n", ap_state.skill));
 
-	snprintf(filename, 260, "%s/%s.sav", apquake_get_seed(), level);
-	file = fopen(filename, "rb");
-	if (file) {
-		fclose(file);
-		Host_Loadgame_f(level);
-	} else {
-		Cbuf_AddText ( va ( "map %s\n", level ) );
+	snprintf (filename, 260, "%s/%s.sav", apquake_get_seed (), level);
+	file = fopen (filename, "rb");
+	if (file)
+	{
+		fclose (file);
+		Host_Loadgame_f (level);
+	}
+	else
+	{
+		Cbuf_AddText (va ("map %s\n", level));
 	}
 }
 
@@ -915,7 +921,7 @@ static void M_Menu_Ep1_Select_f (void)
 
 static void M_Ep1_Select_Draw (cb_context_t *cbx)
 {
-	qpic_t *p;
+	qpic_t	 *p;
 	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
@@ -925,11 +931,11 @@ static void M_Ep1_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[1].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(1, i + 1));
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription (1, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep1_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[1].levels, 0);
-	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep1_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep1_select_cursor)*CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
 static void M_Ep1_Select_Key (int key)
@@ -959,7 +965,7 @@ static void M_Ep1_Select_Key (int key)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		M_SelectLevel(levels[episodes[1].firstLevel + m_ep1_select_cursor].name);
+		M_SelectLevel (levels[episodes[1].firstLevel + m_ep1_select_cursor].name);
 		break;
 	}
 }
@@ -978,7 +984,7 @@ static void M_Menu_Ep2_Select_f (void)
 
 static void M_Ep2_Select_Draw (cb_context_t *cbx)
 {
-	qpic_t *p;
+	qpic_t	 *p;
 	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
@@ -988,11 +994,11 @@ static void M_Ep2_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[2].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(2, i + 1));
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription (2, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep2_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[2].levels, 0);
-	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep2_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep2_select_cursor)*CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
 static void M_Ep2_Select_Key (int key)
@@ -1022,7 +1028,7 @@ static void M_Ep2_Select_Key (int key)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		M_SelectLevel(levels[episodes[2].firstLevel + m_ep2_select_cursor].name);
+		M_SelectLevel (levels[episodes[2].firstLevel + m_ep2_select_cursor].name);
 		break;
 	}
 }
@@ -1041,7 +1047,7 @@ static void M_Menu_Ep3_Select_f (void)
 
 static void M_Ep3_Select_Draw (cb_context_t *cbx)
 {
-	qpic_t *p;
+	qpic_t	 *p;
 	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
@@ -1051,11 +1057,11 @@ static void M_Ep3_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[3].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(3, i + 1));
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription (3, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep3_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[3].levels, 0);
-	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep3_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep3_select_cursor)*CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
 static void M_Ep3_Select_Key (int key)
@@ -1085,7 +1091,7 @@ static void M_Ep3_Select_Key (int key)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		M_SelectLevel(levels[episodes[3].firstLevel + m_ep3_select_cursor].name);
+		M_SelectLevel (levels[episodes[3].firstLevel + m_ep3_select_cursor].name);
 		break;
 	}
 }
@@ -1104,7 +1110,7 @@ static void M_Menu_Ep4_Select_f (void)
 
 static void M_Ep4_Select_Draw (cb_context_t *cbx)
 {
-	qpic_t *p;
+	qpic_t	 *p;
 	const int top = MENU_TOP;
 
 	M_DrawTransPic (cbx, 16, 4, Draw_CachePic ("gfx/qplaque.lmp"));
@@ -1114,11 +1120,11 @@ static void M_Ep4_Select_Draw (cb_context_t *cbx)
 	for (int i = 0; i < episodes[4].levels; i++)
 	{
 		const int y = top + i * CHARACTER_SIZE;
-		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription(4, i + 1));
+		M_Print (cbx, MENU_LABEL_X, y, M_GetLevelDescription (4, i + 1));
 	}
 
 	M_Mouse_UpdateListCursor (&m_ep4_select_cursor, MENU_CURSOR_X, 320, top, CHARACTER_SIZE, episodes[4].levels, 0);
-	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep4_select_cursor) * CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
+	Draw_Character (cbx, MENU_CURSOR_X, top + (m_ep4_select_cursor)*CHARACTER_SIZE, 12 + ((int)(realtime * 4) & 1));
 }
 
 static void M_Ep4_Select_Key (int key)
@@ -1148,7 +1154,7 @@ static void M_Ep4_Select_Key (int key)
 	case K_KP_ENTER:
 	case K_ABUTTON:
 		m_entersound = true;
-		M_SelectLevel(levels[episodes[4].firstLevel + m_ep4_select_cursor].name);
+		M_SelectLevel (levels[episodes[4].firstLevel + m_ep4_select_cursor].name);
 		break;
 	}
 }
@@ -1417,9 +1423,8 @@ static void M_GameOptions_Draw (cb_context_t *cbx)
 	}
 
 #if (GAME_OPTIONS_ITEMS > GAME_OPTIONS_PER_PAGE)
-		M_DrawScrollbar (
-			cbx, MENU_SCROLLBAR_X, MENU_TOP + CHARACTER_SIZE, (float)(first_game_option) / (GAME_OPTIONS_ITEMS - GAME_OPTIONS_PER_PAGE),
-			GAME_OPTIONS_PER_PAGE - 2);
+	M_DrawScrollbar (
+		cbx, MENU_SCROLLBAR_X, MENU_TOP + CHARACTER_SIZE, (float)(first_game_option) / (GAME_OPTIONS_ITEMS - GAME_OPTIONS_PER_PAGE), GAME_OPTIONS_PER_PAGE - 2);
 #endif
 
 	// cursor
@@ -2338,8 +2343,7 @@ static void M_Quit_Draw (cb_context_t *cbx) // johnfitz -- modified for new quit
 }
 
 //=============================================================================
-/* Victory screen */ 
-
+/* Victory screen */
 
 double victory_time = 0.;
 
@@ -2357,20 +2361,21 @@ static void M_Menu_Victory_f (void)
 	cl.looptrack = 3;
 	BGM_PlayCDtrack ((byte)cl.cdtrack, true);
 	victory_time = realtime;
-	SCR_CenterPrint("\nCongratulations and well done! You have\nbeaten the seed, and its hundreds of\nchecks and locations. You have proven\nthat your skill and your cunning are\ngreater than all the powers of Quake.\nYou are the master now. We salute you.");
+	SCR_CenterPrint ("\nCongratulations and well done! You have\nbeaten the seed, and its hundreds of\nchecks and locations. You have proven\nthat your skill "
+					 "and your cunning are\ngreater than all the powers of Quake.\nYou are the master now. We salute you.");
 }
 
-void SCR_DrawCenterString_Remaining (cb_context_t *cbx, int remaining);
+void		  SCR_DrawCenterString_Remaining (cb_context_t *cbx, int remaining);
 extern cvar_t scr_printspeed;
 
 static void M_Victory_Draw (cb_context_t *cbx)
 {
 	qpic_t *pic;
-	int remaining;
-        pic = Draw_CachePic ("gfx/finale.lmp");
-        Draw_Pic (cbx, (320 - pic->width) / 2, 16, pic, 1.0f, false);
+	int		remaining;
+	pic = Draw_CachePic ("gfx/finale.lmp");
+	Draw_Pic (cbx, (320 - pic->width) / 2, 16, pic, 1.0f, false);
 	remaining = scr_printspeed.value * (realtime - victory_time);
-	SCR_DrawCenterString_Remaining(cbx, remaining);
+	SCR_DrawCenterString_Remaining (cbx, remaining);
 }
 
 static void M_Victory_Key (int key)

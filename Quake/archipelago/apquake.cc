@@ -1178,3 +1178,20 @@ void apquake_send_message(const char* msg)
 	Json::FastWriter writer;
 	APSend(writer.write(say_packet));
 }
+
+void apquake_on_death()
+{
+	AP_DeathLinkSend();
+}
+
+
+void apquake_clear_death()
+{
+	AP_DeathLinkClear();
+}
+
+
+int apquake_should_die()
+{
+	return AP_DeathLinkPending() ? 1 : 0;
+}

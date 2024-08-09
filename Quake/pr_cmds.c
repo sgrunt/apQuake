@@ -1951,6 +1951,21 @@ static void PF_cl_particle (void)
 	R_RunParticleEffect (org, dir, color, count);
 }
 
+static void PF_ap_should_die (void)
+{
+	G_FLOAT (OFS_RETURN) = apquake_should_die();
+}
+
+static void PF_ap_on_death (void)
+{
+	apquake_on_death();
+}
+
+static void PF_ap_clear_death (void)
+{
+	apquake_clear_death();
+}
+
 // clang-format off
 const builtin_t pr_ssqcbuiltins[] = {
 	PF_Fixme,
@@ -2053,6 +2068,10 @@ const builtin_t pr_ssqcbuiltins[] = {
 	PF_Fixme,             // void draw_worldtext (string s, vector origin, float size, float lifetime, float depthtest) = #87
 	PF_Fixme,             // void draw_sphere (vector origin, float radius, float colormap, float lifetime, float depthtest) = #88
 	PF_Fixme,             // void draw_cylinder (vector origin, float halfHeight, float radius, float colormap, float lifetime, float depthtest) = #89
+
+	PF_ap_should_die,
+	PF_ap_on_death,
+	PF_ap_clear_death,
 };
 const int pr_ssqcnumbuiltins = countof (pr_ssqcbuiltins);
 

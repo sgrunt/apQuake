@@ -127,6 +127,12 @@ void apquake_check_victory();
 
 void apquake_send_message(const char* msg);
 
+void apquake_on_death();
+
+void apquake_clear_death();
+
+int apquake_should_die();
+
 #ifdef __cplusplus
 }
 #endif

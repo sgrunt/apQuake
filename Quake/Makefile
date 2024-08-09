@@ -34,9 +34,11 @@ CPUFLAGS =
 LDFLAGS ?=
 DFLAGS ?=
 CFLAGS ?=
+CXXFLAGS ?=
 
 ifeq ($(DO_USERDIRS),1)
 CFLAGS += -DDO_USERDIRS=1
+CXXFLAGS += -DDO_USERDIRS=1
 endif
 
 # ---------------------------
@@ -44,7 +46,7 @@ endif
 # ---------------------------
 SYSOBJ_NET := net_bsd.o net_udp.o
 SYSOBJ_SYS := pl_linux.o sys_sdl.o sys_sdl_unix.o
-DEFAULT_TARGET := vkquake
+DEFAULT_TARGET := apquake
 BINTOC_EXE = ../Shaders/bintoc
 
 # ---------------------------
@@ -59,9 +61,20 @@ SDL_CONFIG ?= sdl2-config
 SDL_CFLAGS := $(shell $(SDL_CONFIG) --cflags)
 SDL_LIBS := $(shell $(SDL_CONFIG) --libs)
 
+PKG_CONFIG ?= pkg-config
+JSON_CFLAGS := $(shell $(PKG_CONFIG) jsoncpp --cflags)
+JSON_LIBS := $(shell $(PKG_CONFIG) jsoncpp --libs)
+
+APCPP_CFLAGS :=
+APCPP_LIBS := -lAPCpp
+
+CFLAGS += -Imimalloc
+CXXFLAGS += -Imimalloc
+
 ifneq ($(VULKAN_SDK),)
 LDFLAGS += -L$(VULKAN_SDK)/lib
 CFLAGS += -I$(VULKAN_SDK)/include
+CXXFLAGS += -I$(VULKAN_SDK)/include
 endif
 
 ifeq ($(USE_CODEC_OPUS),1)
@@ -69,6 +82,7 @@ ifeq ($(USE_CODEC_OPUS),1)
 # but they include the headers without the opus directory
 # prefix and rely on pkg-config. ewww...
 CFLAGS += $(shell pkg-config --cflags opusfile)
+CXXFLAGS += $(shell pkg-config --cflags opusfile)
 CODECLIBS += $(shell pkg-config --libs opusfile)
 endif
 
@@ -92,11 +106,11 @@ LIBS := $(COMMON_LIBS) $(CODECLIBS)
 # ---------------------------
 all: $(DEFAULT_TARGET)
 
-vkquake: $(SHADER_OBJS) $(OBJS)
-	$(LINKER) $(SHADER_OBJS) $(OBJS) $(LDFLAGS) $(LIBS) $(SDL_LIBS) -o $@
+apquake: $(SHADER_OBJS) $(OBJS)
+	$(LINKER) $(SHADER_OBJS) $(OBJS) $(LDFLAGS) $(LIBS) $(SDL_LIBS) $(JSON_LIBS) $(APCPP_LIBS) -o $@
 	$(call DO_STRIP,$@)
 
-release: vkquake
+release: apquake
 debug:
 	$(error Use "make DEBUG=1")
 
@@ -113,5 +127,5 @@ sbindir ?= $(exec_prefix)/sbin
 INSTALL ?= install
 INSTALL_PROGRAM ?= $(INSTALL)
 INSTALL_DATA ?= ${INSTALL} -m 644
-install: vkquake
-	$(INSTALL_PROGRAM) $(CURDIR)/vkquake $(DESTDIR)$(bindir)/vkquake
+install: apquake
+	$(INSTALL_PROGRAM) $(CURDIR)/apquake $(DESTDIR)$(bindir)/apquake

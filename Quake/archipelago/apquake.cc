@@ -333,7 +333,7 @@ int apquake_init(ap_settings_t* settings) {
 				}
 			}
 		}
-		srand(NULL);
+		srand(0);
 	}
 
         if (ap_progressive_locations.empty())

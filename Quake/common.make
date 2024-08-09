@@ -1,8 +1,9 @@
 CC = gcc
+CXX = g++
 # HOST_CC is for bintoc which is run on the host OS, not
 #         the target OS: cross-compile friendliness.
 HOST_CC = gcc
-LINKER = $(CC)
+LINKER = $(CXX)
 STRIP ?= strip
 GLSLANG = glslangValidator
 DEBUG ?= 0
@@ -12,6 +13,7 @@ CHECK_GCC = $(shell if echo | $(CC) $(1) -Werror -S -o /dev/null -xc - > /dev/nu
 CFLAGS += -MMD -Wall -Wno-trigraphs -Werror -std=gnu11
 CFLAGS += -D_FILE_OFFSET_BITS=64 
 CFLAGS += $(CPUFLAGS)
+CFLAGS += -Iarchipelago
 ifneq ($(DEBUG),0)
 DFLAGS += -D_DEBUG
 CFLAGS += -g
@@ -28,6 +30,25 @@ define DO_STRIP
 	$(call CMD_STRIP,$(1));
 endef
 endif
+
+
+CXXFLAGS += -MMD -Wall -Wno-trigraphs -Werror
+CXXFLAGS += -D_FILE_OFFSET_BITS=64 
+CXXFLAGS += $(CPUFLAGS)
+CXXFLAGS += -Iarchipelago
+ifneq ($(DEBUG),0)
+DFLAGS += -D_DEBUG
+CXXFLAGS += -g
+DO_STRIP=
+else
+DFLAGS += -DNDEBUG
+CXXFLAGS += -O3 -flto
+CXXFLAGS += $(call CHECK_GCC,-fweb,)
+CXXFLAGS += $(call CHECK_GCC,-frename-registers,)
+CXXFLAGS += $(call CHECK_GCC,-fno-asynchronous-unwind-tables,)
+CXXFLAGS += $(call CHECK_GCC,-fno-ident,)
+endif
+
 
 ifeq ($(DEBUG),0)
 GLSLANG_FLAGS = -V
@@ -70,13 +91,16 @@ endif
 CODECLIBS  :=
 ifeq ($(USE_CODEC_WAVE),1)
 CFLAGS += -DUSE_CODEC_WAVE
+CXXFLAGS += -DUSE_CODEC_WAVE
 endif
 ifeq ($(USE_CODEC_FLAC),1)
 CFLAGS += -DUSE_CODEC_FLAC
+CXXFLAGS += -DUSE_CODEC_FLAC
 CODECLIBS += -lFLAC
 endif
 ifeq ($(USE_CODEC_OPUS),1)
 CFLAGS += -DUSE_CODEC_OPUS
+CXXFLAGS += -DUSE_CODEC_OPUS
 endif
 ifeq ($(USE_CODEC_VORBIS),1)
 CFLAGS += -DUSE_CODEC_VORBIS $(CPP_VORBISDEC)
@@ -84,22 +108,27 @@ CODECLIBS += $(LIB_VORBISDEC)
 endif
 ifeq ($(USE_CODEC_MP3),1)
 CFLAGS += -DUSE_CODEC_MP3
+CXXFLAGS += -DUSE_CODEC_MP3
 CODECLIBS += $(lib_mp3dec)
 endif
 ifeq ($(USE_CODEC_MIKMOD),1)
 CFLAGS += -DUSE_CODEC_MIKMOD
+CXXFLAGS += -DUSE_CODEC_MIKMOD
 CODECLIBS += -lmikmod
 endif
 ifeq ($(USE_CODEC_XMP),1)
 CFLAGS += -DUSE_CODEC_XMP
+CXXFLAGS += -DUSE_CODEC_XMP
 CODECLIBS += -lxmp
 endif
 ifeq ($(USE_CODEC_MODPLUG),1)
 CFLAGS += -DUSE_CODEC_MODPLUG
+CXXFLAGS += -DUSE_CODEC_MODPLUG
 CODECLIBS += -lmodplug
 endif
 ifeq ($(USE_CODEC_UMX),1)
 CFLAGS += -DUSE_CODEC_UMX
+CXXFLAGS += -DUSE_CODEC_UMX
 endif
 
 # ---------------------------
@@ -228,6 +257,7 @@ OBJS := strlcat.o \
 	tasks.o \
 	hash_map.o \
 	embedded_pak.o \
+	archipelago/apquake.o \
 	$(SYSOBJ_SYS) $(SYSOBJ_MAIN)
 
 $(BINTOC_EXE): ../Shaders/bintoc.c
@@ -262,7 +292,10 @@ $(BINTOC_EXE): ../Shaders/bintoc.c
 	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -o $@ ../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/$*_comp.c
 
 %.o:	%.c
-	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) -o $@ $<
+	$(CC) $(DFLAGS) -c $(CFLAGS) $(SDL_CFLAGS) $(JSON_CFLAGS) $(APCPP_CFLAGS) -o $@ $<
+
+%.o:	%.cc
+	$(CXX) $(DFLAGS) -c $(CXXFLAGS) $(SDL_CFLAGS) $(JSON_CFLAGS) $(APCPP_CFLAGS) -o $@ $<
 
 sinclude $(OBJS:.o=.d)
 sinclude $(SHADER_OBJS:%.o=../Shaders/Compiled/$(GLSLANG_OUT_FOLDER)/%.d)

@@ -1117,3 +1117,64 @@ void apquake_check_victory() {
 	AP_StoryComplete();
 	ap_settings.victory_callback();
 }
+
+static bool is_runekey_level(ap_level_index_t level_index) {
+	// zero-based
+	return (level_index.ep == 0
+		&& (level_index.map == 5
+			|| level_index.map == 7))
+		|| (level_index.ep == 2
+		&& (level_index.map == 1
+			|| level_index.map == 2
+			|| level_index.map == 5));
+};
+
+void apquake_send_message(const char* msg)
+{
+	int ep;
+	int map;
+	std::string smsg = msg;
+	if (strncasecmp(msg, "!hint ", 6) == 0)
+	{
+		// Make the hint easier.
+		// Find an E#M# in the text
+		for (size_t i = 6; i < smsg.size() - 4; ++i)
+		{
+			ap_level_info_t* level_info = nullptr;
+
+			if (toupper(smsg[i]) == 'E' &&
+				toupper(smsg[i + 2]) == 'M' &&
+				(smsg[i + 1] - '0') >= 1 && (smsg[i + 1] - '0') <= 9 &&
+				(smsg[i + 3] - '0') >= 1 && (smsg[i + 3] - '0') <= 9)
+			{
+				// Find the level name
+				ep = smsg[i + 1] - '1';
+				map = smsg[i + 3] - '1';
+				level_info = ap_get_level_info(ap_level_index_t{ep, map});
+			}
+
+			if (level_info)
+			{
+				std::string level_name = level_info->name;
+
+				// Check what it's looking for. Computer area map? map scroll?
+				if (smsg.find("silver") != std::string::npos || smsg.find("SILVER") != std::string::npos)
+				{
+					smsg = "!hint " + level_name + " - Silver " + (map == 0 ? "Keycard" : (is_runekey_level(ap_level_index_t{ep, map}) ? "Runekey" : "Key"));
+				}
+				else if (smsg.find("gold") != std::string::npos || smsg.find("GOLD") != std::string::npos)
+				{
+					smsg = "!hint " + level_name + " - Gold " + (map == 0 ? "Keycard" : (is_runekey_level(ap_level_index_t{ep, map}) ? "Runekey" : "Key"));
+					break;
+				}
+				break;
+			}
+		}
+	}
+
+	Json::Value say_packet;
+	say_packet[0]["cmd"] = "Say";
+	say_packet[0]["text"] = smsg;
+	Json::FastWriter writer;
+	APSend(writer.write(say_packet));
+}

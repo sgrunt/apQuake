@@ -125,6 +125,8 @@ void apquake_update();
 
 void apquake_check_victory();
 
+void apquake_send_message(const char* msg);
+
 #ifdef __cplusplus
 }
 #endif

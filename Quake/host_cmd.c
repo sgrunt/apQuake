@@ -1654,17 +1654,6 @@ static void Host_Say (qboolean teamonly)
 	qboolean	quoted;
 	qboolean	fromServer = false;
 
-	if (cmd_source == src_command)
-	{
-		if (cls.state != ca_dedicated)
-		{
-			Cmd_ForwardToServer ();
-			return;
-		}
-		fromServer = true;
-		teamonly = false;
-	}
-
 	if (Cmd_Argc () < 2)
 		return;
 
@@ -1678,6 +1667,25 @@ static void Host_Say (qboolean teamonly)
 		p++;
 		quoted = true;
 	}
+
+	if (cmd_source == src_command)
+	{
+		if (cls.state != ca_dedicated)
+		{
+
+			q_snprintf (text, sizeof(text), "%s", p);
+			if (quoted)
+				text[strlen(text) - 1] = '\0';
+
+			apquake_send_message (text);
+
+			//Cmd_ForwardToServer ();
+			return;
+		}
+		fromServer = true;
+		teamonly = false;
+	}
+		
 	// turn on color set 1
 	if (!fromServer)
 		q_snprintf (text, sizeof (text), "\001%s: %s", save->name, p);

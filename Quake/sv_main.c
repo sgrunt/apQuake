@@ -3290,7 +3290,6 @@ void SV_SpawnServer (const char *server)
 
 	sv.state = ss_loading;
 	sv.paused = false;
-	ap_is_in_game = sv.active ? 1 : 0;
 
 	qcvm->time = 1.0;
 
@@ -3351,7 +3350,6 @@ void SV_SpawnServer (const char *server)
 
 	ED_LoadFromFile (qcvm->worldmodel->entities);
 
-	ap_is_in_game = 1;
 	sv.active = true;
 
 	SV_Precache_Model ("progs/player.mdl"); // Spike -- SV_CreateBaseline depends on this model.
@@ -3381,4 +3379,5 @@ void SV_SpawnServer (const char *server)
 	}
 
 	Con_DPrintf ("Server spawned.\n");
+	ap_is_in_game = 1;
 }

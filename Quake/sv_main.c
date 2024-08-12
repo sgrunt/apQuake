@@ -3379,5 +3379,4 @@ void SV_SpawnServer (const char *server)
 	}
 
 	Con_DPrintf ("Server spawned.\n");
-	ap_is_in_game = 1;
 }

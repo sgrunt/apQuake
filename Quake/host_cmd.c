@@ -2009,6 +2009,8 @@ static void Host_Spawn_f (void)
 			Sys_Printf ("%s entered the game\n", host_client->name);
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);
+
+		ap_is_in_game = sv.active ? 1 : 0;
 	}
 
 	Send_Spawn_Info (host_client, sv.loadgame);

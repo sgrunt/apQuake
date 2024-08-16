@@ -757,9 +757,6 @@ void f_itemrecv(int64_t item_id, bool notify_player)
 		return; // Skip
 	ap_item_t item = it->second;
 	ap_level_index_t idx = {item.ep - 1, item.map - 1};
-	ap_level_info_t* level_info = ap_get_level_info(idx);
-
-	std::string notif_text;
 
 	auto level_state = ap_get_level_state(idx);
 
@@ -767,10 +764,7 @@ void f_itemrecv(int64_t item_id, bool notify_player)
 	const auto& keys_map = get_keys_map();
 	auto key_it = keys_map.find(item.classname);
 	if (key_it != keys_map.end())
-	{
 		level_state->keys[key_it->second] = 1;
-		notif_text = get_exmx_name(level_info->name);
-	}
 
 	// Weapon?
 	const auto& weapons_map = get_weapons_map();
@@ -782,12 +776,15 @@ void f_itemrecv(int64_t item_id, bool notify_player)
 	if (item.classname == "level")
 	{
 		level_state->unlocked = 1;
-		notif_text = get_exmx_name(level_info->name);
+		return;
 	}
 
 	// Level complete?
 	if (item.classname == "exit")
+	{
 		level_state->completed = 1;
+		return;
+	}
 
 	if (!notify_player) return;
 

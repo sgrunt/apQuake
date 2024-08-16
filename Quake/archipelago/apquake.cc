@@ -786,6 +786,28 @@ void f_itemrecv(int64_t item_id, bool notify_player)
 		return;
 	}
 
+	// Runes - unlock END if we have them all
+	if (item.classname == "item_sigil")
+	{
+		if (item.spawnflags & 1)
+			ap_state.player_state.powers[5] = 1;
+		if (item.spawnflags & 2)
+			ap_state.player_state.powers[6] = 1;
+		if (item.spawnflags & 4)
+			ap_state.player_state.powers[7] = 1;
+		if (item.spawnflags & 8)
+			ap_state.player_state.powers[8] = 1;
+
+		if (ap_state.player_state.powers[5] > 0
+			&& ap_state.player_state.powers[6] > 0
+			&& ap_state.player_state.powers[7] > 0
+			&& ap_state.player_state.powers[8] > 0)
+		{
+			ap_level_state_t *level_state = ap_get_level_state (ap_make_level_index (5, 1));
+			level_state->unlocked = true;
+		}
+	}
+
 	if (!notify_player) return;
 
 	if (!ap_is_in_game)

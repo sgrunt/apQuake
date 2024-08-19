@@ -1122,7 +1122,7 @@ void apquake_check_victory() {
 
 	if (ap_state.goal == 1)
 	{
-		if (!ap_get_level_state(ap_level_index_t{5, 1})->completed) return;
+		if (!ap_get_level_state(ap_level_index_t{4, 0})->completed) return;
 	}
 	else
 	{
